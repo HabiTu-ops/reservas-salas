@@ -64,6 +64,12 @@
     </div>
     <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Reserva de salas</h1>
     <p class="mt-1 text-slate-600">Oficina Principal Reforma - MX · Agenda una visita y asegura la sala.</p>
+    <a href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Paseo+de+la+Reforma+333%2C+Ju%C3%A1rez%2C+Cuauht%C3%A9moc%2C+06500+Ciudad+de+M%C3%A9xico"
+       target="_blank" rel="noopener"
+       class="mt-1 inline-flex items-start gap-1.5 text-sm text-slate-600 hover:text-teal-dark">
+      <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span>Av. P.º de la Reforma 333-Piso 2, Juárez, Cuauhtémoc, 06500 Ciudad de México, CDMX</span>
+    </a>
   </header>
 
   <div id="configBanner" class="hidden mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -114,6 +120,11 @@
         </div>
       </div>
 
+      <div id="editBanner" class="hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div id="editText" class="font-semibold"></div>
+        <button type="button" id="cancelEditBtn" class="mt-1 text-xs font-semibold underline">Cancelar el cambio y volver a reservar</button>
+      </div>
+
       <div class="grid grid-cols-6 gap-4">
         <div class="col-span-6 sm:col-span-3">
           <label for="date" class="block text-sm font-semibold mb-1.5">Fecha</label>
@@ -125,15 +136,7 @@
         </div>
         <div class="col-span-3">
           <label for="duration" class="block text-sm font-semibold mb-1.5">Duración</label>
-          <select id="duration" required class="field">
-            <option value="30">30 min</option>
-            <option value="45">45 min</option>
-            <option value="60" selected>1 hora</option>
-            <option value="90">1 h 30 min</option>
-            <option value="120">2 horas</option>
-            <option value="180">3 horas</option>
-            <option value="240">4 horas</option>
-          </select>
+          <select id="duration" required class="field"></select>
         </div>
         <div class="col-span-3">
           <label for="attendees" class="block text-sm font-semibold mb-1.5">Asistentes</label>
@@ -150,20 +153,10 @@
         <div id="roomList" class="grid grid-cols-2 gap-2"></div>
       </fieldset>
 
-      <div class="space-y-4">
+      <div id="detailsBox" class="space-y-4">
         <div>
           <label for="host" class="block text-sm font-semibold mb-1.5">Host</label>
           <select id="host" required class="field"></select>
-        </div>
-
-        <div id="numberBox" class="hidden">
-          <label for="number" id="numberLabel" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp de la visita</label>
-          <input id="number" type="tel" inputmode="tel" maxlength="25" autocomplete="off" placeholder="10 dígitos, solo números" class="field">
-        </div>
-
-        <div>
-          <label for="purpose" class="block text-sm font-semibold mb-1.5">Motivo de la reunión</label>
-          <select id="purpose" required class="field"></select>
         </div>
 
         <div>
@@ -174,6 +167,16 @@
             <button type="button" id="removeVisitor2" class="shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-500 hover:text-red-700">Quitar</button>
           </div>
           <button type="button" id="addVisitor2" class="mt-2 rounded text-sm font-semibold text-teal hover:text-teal-dark">+ Agregar segunda visita</button>
+        </div>
+
+        <div id="numberBox" class="hidden">
+          <label for="number" id="numberLabel" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp de la visita</label>
+          <input id="number" type="tel" inputmode="tel" maxlength="25" autocomplete="off" placeholder="10 dígitos, solo números" class="field">
+        </div>
+
+        <div>
+          <label for="purpose" class="block text-sm font-semibold mb-1.5">Motivo de la reunión</label>
+          <select id="purpose" required class="field"></select>
         </div>
       </div>
 
@@ -243,6 +246,8 @@ let session = null;        // { token, email, admin }
 let codeStep = false;      // ¿está escribiendo el código?
 let pendingEmail = '';
 let mine = null;           // { bookings } | null (cargando)
+let editing = null;        // reserva que se está reagendando { id, roomId, date, ... }
+let busyAct = false;       // evita doble clic al cancelar
 
 /* ---------------- Utilidades ---------------- */
 const pad = (n) => String(n).padStart(2, '0');
@@ -259,7 +264,7 @@ function prettyDate(iso, withYear) {
     : { weekday: 'long', day: 'numeric', month: 'long' });
 }
 function overlaps(roomId, s, e) {
-  return bookings.find((b) => b.roomId === roomId && s < toMin(b.end) && e > toMin(b.start));
+  return bookings.find((b) => b.roomId === roomId && !(editing && b.id && b.id === editing.id) && s < toMin(b.end) && e > toMin(b.start));
 }
 function currentRange() {
   const start = $('start').value;
@@ -281,6 +286,7 @@ function saveSession() {
 }
 function endSession(expired) {
   session = null; mine = null; codeStep = false;
+  if (editing) stopEdit();
   saveSession();
   renderIdentity(); renderMine();
   if (cfg) { renderDayList(); render(); }
@@ -356,7 +362,17 @@ function setLive(ok, text) {
   $('liveText').textContent = text;
 }
 
+const DUR_LABELS = { 30: '30 min', 45: '45 min', 60: '1 hora', 90: '1 h 30 min', 120: '2 horas', 180: '3 horas', 240: '4 horas' };
+function buildDurations() {
+  const max = cfg.maxDuration || 120;
+  const keep = $('duration').value || '60';
+  const opts = Object.keys(DUR_LABELS).map(Number).filter((m) => m <= max);
+  $('duration').innerHTML = opts.map((m) => `<option value="${m}">${DUR_LABELS[m]}</option>`).join('');
+  $('duration').value = opts.includes(Number(keep)) ? keep : String(opts.includes(60) ? 60 : opts[opts.length - 1]);
+}
+
 function fillSelects() {
+  buildDurations();
   const hosts = cfg.hosts || [], purposes = cfg.purposes || [];
   $('host').innerHTML = '<option value="">Elige el host</option>' +
     hosts.map((h) => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
@@ -522,6 +538,11 @@ function bookingCard(b, withDate) {
         <div class="font-semibold">${esc(b.visitor)}</div>
         <div class="text-sm text-slate-600">${esc(b.purpose || 'Sin motivo indicado')}</div>
         <div class="text-xs text-slate-500 mt-0.5">${meta.join(' · ')}</div>
+        ${b.editable ? `
+        <div class="flex gap-2 mt-2">
+          <button type="button" data-act="resched" data-id="${esc(b.id)}" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:border-teal hover:text-teal-dark">Reagendar</button>
+          <button type="button" data-act="cancel" data-id="${esc(b.id)}" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Cancelar</button>
+        </div>` : ''}
       </div>
     </div>`;
 }
@@ -646,10 +667,117 @@ $('removeVisitor2').addEventListener('click', () => {
   $('addVisitor2').classList.remove('hidden');
 });
 
+/* ---------------- Cancelar y reagendar ---------------- */
+function findBooking(id) {
+  return [...bookings, ...(mine ? mine.bookings : [])].find((b) => b.id === id);
+}
+
+async function startEdit(b) {
+  if (!session || !cfg) return;
+  editing = { id: b.id, roomId: b.roomId, date: b.date };
+  $('detailsBox').classList.add('hidden');
+  $('editBanner').classList.remove('hidden');
+  $('editText').textContent = `Reagendando: ${b.visitor}${b.purpose ? ' · ' + b.purpose : ''}. Elige la nueva fecha, hora y sala.`;
+  $('submitBtn').textContent = 'Guardar cambio';
+  showFormError('');
+
+  $('date').value = b.date;
+  selectedRoom = null;
+  await loadDay(true);
+
+  if ($('start').options.some((o) => o.value === b.start)) $('start').value = b.start;
+  const durs = $('duration').options.map((o) => Number(o.value));
+  const dur = toMin(b.end) - toMin(b.start);
+  const fit = durs.filter((m) => m <= dur);
+  $('duration').value = String(fit.length ? Math.max(...fit) : durs[0]);
+  $('attendees').value = b.attendees || 2;
+  selectedRoom = b.roomId;
+  render();
+  if (window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function stopEdit() {
+  editing = null;
+  $('detailsBox').classList.remove('hidden');
+  $('editBanner').classList.add('hidden');
+  $('submitBtn').textContent = 'Reservar sala';
+  showFormError('');
+  if (cfg) render();
+}
+
+async function submitEdit(range) {
+  if (!session) return showFormError('Tu sesión venció. Verifica tu correo otra vez.');
+  if (!selectedRoom) return showFormError('Elige una sala disponible.');
+
+  submitting = true;
+  $('submitBtn').disabled = true;
+  $('submitBtn').textContent = 'Guardando…';
+  try {
+    const r = await api({
+      action: 'reschedule', token: session.token,
+      id: editing.id, roomId: editing.roomId, date: editing.date,
+      newRoomId: selectedRoom, newDate: $('date').value, newStart: range.start, newDuration: range.dur
+    });
+    if (r.ok) {
+      toast(r.message || 'Reserva actualizada.');
+      if (r.chat && r.chat !== 'OK') toast('La reserva se actualizó, pero el aviso a Chat falló: ' + r.chat, 'error');
+      stopEdit();
+      selectedRoom = null;
+      loadMine();
+    } else if (r.authRequired) {
+      endSession(true);
+      showFormError(r.error || 'Verifica tu correo otra vez.');
+    } else {
+      showFormError(r.error || 'No se pudo guardar el cambio.');
+      if (r.conflict) toast('Esa sala ya está ocupada en ese horario. Elige otra opción.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showFormError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    submitting = false;
+    $('submitBtn').textContent = editing ? 'Guardar cambio' : 'Reservar sala';
+    await loadDay(true);
+  }
+}
+
+async function cancelBooking(b) {
+  if (!session || busyAct) return;
+  const detalle = `${b.visitor}\n${prettyDate(b.date, true)} · ${b.start}–${b.end}\n${roomName(b.roomId)}`;
+  if (!window.confirm('¿Cancelar esta visita?\n\n' + detalle + '\n\nLa sala quedará libre.')) return;
+  busyAct = true;
+  try {
+    const r = await api({ action: 'cancel', token: session.token, id: b.id, roomId: b.roomId, date: b.date });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo cancelar.', 'error'); return; }
+    toast(r.message || 'Reserva cancelada.');
+    if (r.chat && r.chat !== 'OK') toast('La reserva se canceló, pero el aviso a Chat falló: ' + r.chat, 'error');
+    if (editing && editing.id === b.id) stopEdit();
+    await loadDay(true);
+    loadMine();
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  } finally {
+    busyAct = false;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+  if (!btn) return;
+  const b = findBooking(btn.dataset.id);
+  if (!b) return;
+  if (btn.dataset.act === 'cancel') cancelBooking(b);
+  else if (btn.dataset.act === 'resched') startEdit(b);
+});
+$('cancelEditBtn').addEventListener('click', async () => { stopEdit(); selectedRoom = null; await loadDay(true); });
+
 $('bookingForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   showFormError('');
   const range = currentRange();
+  if (editing) return submitEdit(range);
   const host = $('host').value;
   const purpose = $('purpose').value;
   const number = $('number').value.replace(/\D/g, '');
