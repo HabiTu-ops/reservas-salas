@@ -158,8 +158,13 @@
           <select id="host" required class="field"></select>
         </div>
 
+        <div id="agencyBox" class="hidden">
+          <label for="agency" id="agencyLabel" class="block text-sm font-semibold mb-1.5">Inmobiliaria</label>
+          <input id="agency" type="text" maxlength="80" autocomplete="off" placeholder="Nombre de la inmobiliaria" class="field">
+        </div>
+
         <div>
-          <label for="visitor1" class="block text-sm font-semibold mb-1.5">Nombre de la visita</label>
+          <label for="visitor1" id="visitorLabel" class="block text-sm font-semibold mb-1.5">Nombre de la visita</label>
           <input id="visitor1" type="text" maxlength="80" required placeholder="Nombre y apellido" class="field">
           <div id="visitor2Box" class="hidden mt-2 flex items-center gap-2">
             <input id="visitor2" type="text" maxlength="80" placeholder="Nombre de la segunda visita" class="field min-w-0 flex-1">
@@ -169,7 +174,7 @@
         </div>
 
         <div id="numberBox" class="hidden">
-          <label for="number" id="numberLabel" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp de la visita</label>
+          <label for="number" id="numberLabel" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp del broker</label>
           <input id="number" type="tel" inputmode="tel" maxlength="25" autocomplete="off" placeholder="10 dígitos, solo números" class="field">
         </div>
 
@@ -372,22 +377,45 @@ function buildDurations() {
 
 function fillSelects() {
   buildDurations();
-  const hosts = cfg.hosts || [], purposes = cfg.purposes || [];
+  const hosts = cfg.hosts || [];
   $('host').innerHTML = '<option value="">Elige el host</option>' +
     hosts.map((h) => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
-  $('purpose').innerHTML = '<option value="">Elige el motivo</option>' +
-    purposes.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
   try {
     const h = localStorage.getItem('rs_host'); if (h && hosts.includes(h)) $('host').value = h;
   } catch (e) {}
-  $('numberLabel').textContent = cfg.numberLabel || 'Número';
-  updateNumberBox();
+  updateHostFields();
 }
 
-function updateNumberBox() {
-  const need = !!cfg && (cfg.numberHosts || []).includes($('host').value);
-  $('numberBox').classList.toggle('hidden', !need);
-  if (!need) $('number').value = '';
+/* Cambia el formulario según el host: Pulppo pide inmobiliaria, un solo nombre (broker) y teléfono */
+function updateHostFields() {
+  if (!cfg) return;
+  const host = $('host').value;
+  const isAgency = (cfg.agencyHosts || []).includes(host);
+  const needNumber = (cfg.numberHosts || []).includes(host);
+
+  $('agencyBox').classList.toggle('hidden', !isAgency);
+  if (!isAgency) $('agency').value = '';
+  $('agencyLabel').textContent = cfg.agencyLabel || 'Inmobiliaria';
+
+  $('visitorLabel').textContent = isAgency ? (cfg.brokerLabel || 'Nombre del broker responsable') : 'Nombre de la visita';
+  if (isAgency) {          // Pulppo: un solo nombre
+    $('visitor2').value = '';
+    $('visitor2Box').classList.add('hidden');
+    $('addVisitor2').classList.add('hidden');
+  } else if ($('visitor2Box').classList.contains('hidden')) {
+    $('addVisitor2').classList.remove('hidden');
+  }
+
+  $('numberLabel').textContent = cfg.numberLabel || 'Número';
+  $('numberBox').classList.toggle('hidden', !needNumber);
+  if (!needNumber) $('number').value = '';
+
+  // Motivos de ese host
+  const list = ((cfg.purposesByHost || {})[host]) || [];
+  const keep = $('purpose').value;
+  $('purpose').innerHTML = `<option value="">${host ? 'Elige el motivo' : 'Elige primero el host'}</option>` +
+    list.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if (list.includes(keep)) $('purpose').value = keep;
 }
 
 function buildStartOptions() {
@@ -493,7 +521,7 @@ function renderTimeline(range) {
       const l = Math.max(0, pct(toMin(b.start))), w = Math.min(100, pct(toMin(b.end))) - l;
       const label = b.detail ? b.visitor : 'Ocupada';
       const tip = b.detail
-        ? `${b.start}–${b.end} · ${b.visitor}` + (b.purpose ? ` · ${b.purpose}` : '') + (b.host ? ` · ${b.host}` : '')
+        ? `${b.start}–${b.end} · ${b.agency ? b.agency + ' / ' : ''}${b.visitor}` + (b.purpose ? ` · ${b.purpose}` : '') + (b.host ? ` · ${b.host}` : '')
         : `Ocupada ${b.start}–${b.end}`;
       const cls = b.mine ? 'bg-teal-soft border-teal text-teal-dark' : 'hatch border-slate-400/50 text-ink/80';
       return `<div class="${cls} absolute inset-y-0 rounded-md border overflow-hidden flex items-center"
@@ -534,7 +562,7 @@ function bookingCard(b, withDate) {
         <div class="text-xs text-slate-500">${esc(roomName(b.roomId))}</div>
       </div>
       <div class="flex-1 min-w-[12rem]">
-        <div class="font-semibold">${esc(b.visitor)}</div>
+        <div class="font-semibold">${b.agency ? esc(b.agency) + ' · ' : ''}${esc(b.visitor)}</div>
         <div class="text-sm text-slate-600">${esc(b.purpose || 'Sin motivo indicado')}</div>
         <div class="text-xs text-slate-500 mt-0.5">${meta.join(' · ')}</div>
         ${b.editable ? `
@@ -646,14 +674,14 @@ $('code').addEventListener('input', () => { $('code').value = $('code').value.re
 /* ---------------- Formulario ---------------- */
 $('date').addEventListener('change', async () => { selectedRoom = null; await loadDay(true); });
 ['start', 'duration', 'attendees'].forEach((id) => $(id).addEventListener('input', render));
-$('host').addEventListener('change', updateNumberBox);
+$('host').addEventListener('change', updateHostFields);
 $('number').addEventListener('input', () => { $('number').value = $('number').value.replace(/\D/g, ''); });
 
 function resetVisitors() {
   $('visitor1').value = '';
   $('visitor2').value = '';
   $('visitor2Box').classList.add('hidden');
-  $('addVisitor2').classList.remove('hidden');
+  if (cfg && !(cfg.agencyHosts || []).includes($('host').value)) $('addVisitor2').classList.remove('hidden');
 }
 $('addVisitor2').addEventListener('click', () => {
   $('visitor2Box').classList.remove('hidden');
@@ -676,7 +704,7 @@ async function startEdit(b) {
   editing = { id: b.id, roomId: b.roomId, date: b.date };
   $('detailsBox').classList.add('hidden');
   $('editBanner').classList.remove('hidden');
-  $('editText').textContent = `Reagendando: ${b.visitor}${b.purpose ? ' · ' + b.purpose : ''}. Elige la nueva fecha, hora y sala.`;
+  $('editText').textContent = `Reagendando: ${b.agency ? b.agency + ' / ' : ''}${b.visitor}${b.purpose ? ' · ' + b.purpose : ''}. Elige la nueva fecha, hora y sala.`;
   $('submitBtn').textContent = 'Guardar cambio';
   showFormError('');
 
@@ -781,14 +809,17 @@ $('bookingForm').addEventListener('submit', async (ev) => {
   const purpose = $('purpose').value;
   const number = $('number').value.replace(/\D/g, '');
   const needNumber = (cfg.numberHosts || []).includes(host);
-  const visitors = [$('visitor1').value.trim(), $('visitor2').value.trim()].filter(Boolean);
+  const isAgency = (cfg.agencyHosts || []).includes(host);
+  const agency = $('agency').value.trim();
+  const visitors = (isAgency ? [$('visitor1').value.trim()] : [$('visitor1').value.trim(), $('visitor2').value.trim()]).filter(Boolean);
 
   if (!session) return showFormError('Primero verifica tu correo (arriba del formulario).');
   if (!selectedRoom) return showFormError('Elige una sala disponible.');
   if (!host) return showFormError('Elige el host.');
+  if (isAgency && !agency) return showFormError(`Escribe la ${(cfg.agencyLabel || 'inmobiliaria').toLowerCase()}.`);
+  if (!visitors.length) return showFormError(isAgency ? `Escribe el ${(cfg.brokerLabel || 'nombre del broker').toLowerCase()}.` : 'Escribe el nombre de la visita.');
   if (needNumber && (number.length < 10 || number.length > 15)) return showFormError(`Escribe el ${(cfg.numberLabel || 'número').toLowerCase()} (10 dígitos).`);
   if (!purpose) return showFormError('Elige el motivo de la reunión.');
-  if (!visitors.length) return showFormError('Escribe el nombre de la visita.');
 
   submitting = true;
   $('submitBtn').disabled = true;
@@ -798,7 +829,7 @@ $('bookingForm').addEventListener('submit', async (ev) => {
     const r = await api({
       action: 'book', token: session.token,
       date: $('date').value, start: range.start, duration: range.dur,
-      roomId: selectedRoom, host, purpose, visitors, number: needNumber ? number : '',
+      roomId: selectedRoom, host, purpose, visitors, agency: isAgency ? agency : '', number: needNumber ? number : '',
       attendees: parseInt($('attendees').value, 10) || 1
     });
     if (r.ok) {
@@ -806,6 +837,7 @@ $('bookingForm').addEventListener('submit', async (ev) => {
       if (r.chat && r.chat !== 'OK') toast('La reserva se guardó, pero el aviso a Chat falló: ' + r.chat, 'error');
       try { localStorage.setItem('rs_host', host); } catch (x) {}
       resetVisitors();
+      $('agency').value = '';
       $('purpose').value = '';
       $('number').value = '';
       selectedRoom = null;
