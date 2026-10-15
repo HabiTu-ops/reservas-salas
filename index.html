@@ -32,11 +32,21 @@
     padding: .625rem .75rem; color: #0F1F2E;
   }
   .field:focus-visible { outline: 2px solid #0B6E6E; outline-offset: 0; }
-  .hatch {
-    background-color: #D5DCE4;
-    background-image: repeating-linear-gradient(135deg, rgba(15,31,46,.14) 0 2px, transparent 2px 8px);
+  /* Línea de tiempo: libre (verde) vs ocupada (rojo rayado) vs tu reserva (azul) */
+  .track {
+    background-color: #E7F5EA;
+    border: 1px solid #BFE0C7;
+    background-image: linear-gradient(to right, rgba(27,127,59,.16) 1px, transparent 1px);
   }
-  .track { background-image: linear-gradient(to right, rgba(15,31,46,.09) 1px, transparent 1px); }
+  .free-swatch { background-color: #E7F5EA; border: 1px solid #BFE0C7; }
+  .hatch {
+    background-color: #F6D9D9;
+    background-image: repeating-linear-gradient(135deg, rgba(185,28,28,.28) 0 2px, transparent 2px 8px);
+    border-color: #D99A9A;
+    color: #7F1D1D;
+  }
+  .mine-block { background-color: #DCE6FB; border-color: #4F74D0; color: #1F3A8A; }
+  .mine-card { border-color: #4F74D0; background-color: #F0F4FD; }
   .toast-in { animation: toast .25s ease-out; }
   @keyframes toast { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   .pulse-dot { animation: pulse 2s infinite; }
@@ -197,8 +207,9 @@
       <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-5">
         <h2 id="dayTitle" class="text-lg font-bold capitalize">Disponibilidad</h2>
         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm hatch"></span>Ocupada</span>
-          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm bg-teal-soft border border-teal"></span>Tu reserva</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm free-swatch"></span>Libre</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm hatch border"></span>Ocupada</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm mine-block border"></span>Tu reserva</span>
           <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm bg-teal"></span>Tu selección</span>
         </div>
       </div>
@@ -469,7 +480,7 @@ function roomState(r, range) {
   const people = parseInt($('attendees').value, 10) || 1;
   if (people > r.capacity) return { off: true, text: `Máx. ${r.capacity} personas` };
   const c = range ? overlaps(r.id, range.s, range.e) : null;
-  if (c) return { off: true, text: `Ocupada ${c.start}–${c.end}` };
+  if (c) return { off: true, busy: true, text: `Ocupada ${c.start}–${c.end}` };
   return { off: false, text: 'Libre' };
 }
 
@@ -493,7 +504,7 @@ function renderRooms(range) {
             ${on ? 'border-teal bg-teal-soft ring-1 ring-teal' : 'border-slate-300'}">
           <input type="radio" name="room" value="${esc(r.id)}" class="sr-only" ${st.off ? 'disabled' : ''} ${on ? 'checked' : ''}>
           <span class="block text-sm font-semibold leading-tight ${st.off ? '' : 'text-ink'}">${esc(r.name)}</span>
-          <span class="block text-xs mt-0.5 ${st.off ? 'text-slate-400' : (on ? 'text-teal-dark' : 'text-slate-600')}">
+          <span class="block text-xs mt-0.5 ${st.busy ? 'text-red-700' : st.off ? 'text-slate-400' : (on ? 'text-teal-dark' : 'text-emerald-700')}">
             ${r.capacity} pers. · ${esc(st.text)}
           </span>
         </label>`;
@@ -523,7 +534,7 @@ function renderTimeline(range) {
       const tip = b.detail
         ? `${b.start}–${b.end} · ${b.agency ? b.agency + ' / ' : ''}${b.visitor}` + (b.purpose ? ` · ${b.purpose}` : '') + (b.host ? ` · ${b.host}` : '')
         : `Ocupada ${b.start}–${b.end}`;
-      const cls = b.mine ? 'bg-teal-soft border-teal text-teal-dark' : 'hatch border-slate-400/50 text-ink/80';
+      const cls = b.mine ? 'mine-block' : 'hatch';
       return `<div class="${cls} absolute inset-y-0 rounded-md border overflow-hidden flex items-center"
                    style="left:${l}%;width:${w}%" title="${esc(tip)}">
                 <span class="px-1.5 text-[11px] font-semibold whitespace-nowrap">${esc(label)}</span>
@@ -542,7 +553,7 @@ function renderTimeline(range) {
           <div class="text-sm font-semibold leading-tight">${esc(r.name)}</div>
           <div class="text-xs text-slate-500">${esc(r.floor)} · ${r.capacity} pers.</div>
         </div>
-        <div class="track relative flex-1 h-9 rounded-md bg-slate-100 border border-slate-200"
+        <div class="track relative flex-1 h-9 rounded-md"
              style="background-size:${100 / (span / 60)}% 100%">${blocks}${sel}</div>
       </div>`;
   }).join('');
@@ -555,7 +566,7 @@ function bookingCard(b, withDate) {
   if (b.schedulerEmail) meta.push('Agenda: ' + esc(b.schedulerEmail));
   else if (b.scheduler && !b.mine) meta.push('Agenda: ' + esc(b.scheduler));
   return `
-    <div class="rounded-xl border ${b.mine ? 'border-teal bg-teal-soft/40' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-start gap-x-4 gap-y-1">
+    <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-start gap-x-4 gap-y-1">
       <div class="w-32 shrink-0">
         ${withDate ? `<div class="text-xs font-semibold text-slate-500 capitalize">${esc(prettyDate(b.date, true))}</div>` : ''}
         <div class="font-bold tabular-nums">${esc(b.start)}–${esc(b.end)}</div>
