@@ -302,7 +302,7 @@
               <select id="seatEnd" class="field"></select>
             </div>
           </div>
-          <p class="mt-2 text-xs text-slate-500">Todo el día es de 8:00 a 20:00.</p>
+          <p id="seatAllDayNote" class="mt-2 text-xs text-slate-500">Todo el día es de 7:00 a 20:00.</p>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-4">
@@ -314,6 +314,11 @@
             <label for="seatAgency" class="block text-sm font-semibold mb-1.5">Inmobiliaria</label>
             <input id="seatAgency" type="text" maxlength="80" autocomplete="organization" placeholder="Tu inmobiliaria" class="field">
           </div>
+        </div>
+
+        <div>
+          <label for="seatPhone" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp</label>
+          <input id="seatPhone" type="tel" inputmode="tel" maxlength="25" autocomplete="tel" placeholder="10 dígitos, solo números" class="field">
         </div>
 
         <div class="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm">
@@ -355,7 +360,8 @@
     </section>
   </div>
 
-  <p class="mt-10 text-center text-xs text-slate-400">Versión 2026-10-16 · e</p>
+  <p id="officeNote" class="mt-10 text-center text-sm font-semibold text-slate-600">Horario de trabajo de la oficina: de 7:00 a 20:00 h.</p>
+  <p class="mt-1 text-center text-xs text-slate-400">Versión 2026-10-16 · f</p>
 </div>
 
 <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
@@ -513,6 +519,7 @@ function buildDurations() {
 }
 
 function fillSelects() {
+  if (cfg.officeHoursNote) $('officeNote').textContent = cfg.officeHoursNote;
   buildDurations();
   const hosts = cfg.hosts || [];
   $('host').innerHTML = '<option value="">Elige el host</option>' +
@@ -1030,15 +1037,20 @@ function initSeats() {
   try {
     $('seatName').value = localStorage.getItem('rs_seat_name') || '';
     $('seatAgency').value = localStorage.getItem('rs_seat_agency') || '';
+    $('seatPhone').value = localStorage.getItem('rs_seat_phone') || '';
   } catch (e) {}
+  $('seatAllDayNote').textContent = `Todo el día es de ${seatOpen() / 60}:00 a ${seatClose() / 60}:00.`;
   buildSeatTimes();
   renderSeatGate();
   renderSeats();
   if (typeof location !== 'undefined' && location.hash === '#lugares') setTab('seats');
 }
 
+const seatOpen = () => (cfg.seatOpenHour != null ? cfg.seatOpenHour : cfg.openHour) * 60;
+const seatClose = () => (cfg.seatCloseHour != null ? cfg.seatCloseHour : cfg.closeHour) * 60;
+
 function seatRange() {
-  const open = cfg.openHour * 60, close = cfg.closeHour * 60;
+  const open = seatOpen(), close = seatClose();
   if (seatMode === 'day') return { s: open, e: close, allDay: true };
   const a = $('seatStart').value, b = $('seatEnd').value;
   if (!a || !b) return null;
@@ -1047,7 +1059,7 @@ function seatRange() {
 }
 
 function buildSeatTimes() {
-  const step = cfg.seatStep || 30, open = cfg.openHour * 60, close = cfg.closeHour * 60;
+  const step = cfg.seatStep || 30, open = seatOpen(), close = seatClose();
   const nowMin = $('seatDate').value === cfg.today ? nowMinutes() : -1;
   const keep = $('seatStart').value;
   const starts = [];
@@ -1061,7 +1073,7 @@ function buildSeatTimes() {
 }
 
 function buildSeatEnds() {
-  const step = cfg.seatStep || 30, close = cfg.closeHour * 60;
+  const step = cfg.seatStep || 30, close = seatClose();
   const keep = $('seatEnd').value;
   const s = $('seatStart').value ? toMin($('seatStart').value) : close;
   const ends = [];
@@ -1188,6 +1200,8 @@ async function bookSeat() {
   const agency = $('seatAgency').value.trim();
   if (!name) return seatError('Escribe tu nombre.');
   if (!agency) return seatError('Escribe el nombre de tu inmobiliaria.');
+  const phone = $('seatPhone').value.replace(/\D/g, '');
+  if (phone.length < 10 || phone.length > 15) return seatError('Escribe tu teléfono o WhatsApp (10 dígitos).');
 
   submitting = true;
   $('seatSubmit').disabled = true;
@@ -1195,12 +1209,12 @@ async function bookSeat() {
   try {
     const r = await api({
       action: 'seatBook', token: session.token, seat: selectedSeat, date: $('seatDate').value,
-      allDay: range.allDay, start: $('seatStart').value, end: $('seatEnd').value, name, agency
+      allDay: range.allDay, start: $('seatStart').value, end: $('seatEnd').value, name, agency, phone
     });
     if (r.ok) {
       toast(r.message || 'Lugar reservado.');
       if (r.chat && r.chat !== 'OK') toast('El lugar se reservó, pero el aviso a Chat falló: ' + r.chat, 'error');
-      try { localStorage.setItem('rs_seat_name', name); localStorage.setItem('rs_seat_agency', agency); } catch (e) {}
+      try { localStorage.setItem('rs_seat_name', name); localStorage.setItem('rs_seat_agency', agency); localStorage.setItem('rs_seat_phone', phone); } catch (e) {}
       selectedSeat = null;
       seatMine = null;
     } else if (r.authRequired) {
@@ -1237,7 +1251,7 @@ async function loadSeatMine() {
 }
 
 function seatCard(b) {
-  const meta = (session && session.admin) ? [b.name, b.agency, b.email].filter(Boolean).map(esc) : [];
+  const meta = (session && session.admin) ? [b.name, b.agency, b.phone, b.email].filter(Boolean).map(esc) : [];
   return `
     <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -1288,6 +1302,7 @@ $('seatModeHours').addEventListener('click', () => setSeatMode('hours'));
 $('seatDate').addEventListener('change', async () => { selectedSeat = null; seatError(''); if (cfg) buildSeatTimes(); await loadSeats(true); });
 $('seatStart').addEventListener('input', () => { buildSeatEnds(); renderSeats(); });
 $('seatEnd').addEventListener('input', renderSeats);
+$('seatPhone').addEventListener('input', () => { $('seatPhone').value = $('seatPhone').value.replace(/\D/g, ''); });
 $('seatMapBox').addEventListener('click', onSeatClick);
 $('seatMapBox').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeatClick(e); } });
 $('seatSubmit').addEventListener('click', bookSeat);
