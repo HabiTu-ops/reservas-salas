@@ -53,6 +53,30 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
   @media (prefers-reduced-motion: reduce) { .toast-in, .pulse-dot { animation: none; } }
   button:focus-visible { outline: 2px solid #0B6E6E; outline-offset: 2px; }
+  /* Pestañas y selector Todo el día / Por horas */
+  .tab-btn { padding: .6rem 1rem; border-radius: .75rem; font-weight: 700; font-size: .9rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+  .tab-btn:hover { border-color: #0B6E6E; }
+  .tab-on { background: #0F1F2E; border-color: #0F1F2E; color: #fff; }
+  .seg-btn { padding: .6rem .75rem; border-radius: .625rem; font-weight: 600; font-size: .875rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+  .seg-on { background: #D8EEEC; border-color: #0B6E6E; color: #085555; }
+  /* Croquis de lugares */
+  .seat circle { stroke-width: 3; }
+  .seat text { pointer-events: none; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; }
+  .seat-free { cursor: pointer; }
+  .seat-free circle { fill: #E7F5EA; stroke: #4CAF72; }
+  .seat-free text { fill: #166534; }
+  .seat-free:hover circle { fill: #CDEBD4; }
+  .seat-taken { cursor: not-allowed; }
+  .seat-taken circle { fill: url(#seatHatch); stroke: #D99A9A; }
+  .seat-taken text { fill: #7F1D1D; }
+  .seat-mine { cursor: default; }
+  .seat-mine circle { fill: #DCE6FB; stroke: #4F74D0; }
+  .seat-mine text { fill: #1F3A8A; }
+  .seat-selected { cursor: pointer; }
+  .seat-selected circle { fill: #0B6E6E; stroke: #085555; }
+  .seat-selected text { fill: #fff; }
+  .seat:focus { outline: none; }
+  .seat:focus-visible circle { stroke: #0F1F2E; stroke-width: 4; }
 </style>
 </head>
 
@@ -85,11 +109,12 @@
     Falta conectar la página: pega la URL de tu Web App en <code>API_URL</code> (al final de este archivo).
   </div>
 
-  <div class="grid lg:grid-cols-5 gap-6 items-start">
+  <nav class="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Secciones">
+    <button type="button" id="tabRooms" role="tab" class="tab-btn tab-on">Salas de reunión</button>
+    <button type="button" id="tabSeats" role="tab" class="tab-btn">Lugares de trabajo <span class="ml-1 rounded-full bg-teal-soft text-teal-dark text-[11px] font-bold px-2 py-0.5">Pulppo</span></button>
+  </nav>
 
-    <!-- ============ FORMULARIO ============ -->
-    <form id="bookingForm" class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5" novalidate>
-
+  <div class="mb-6 max-w-xl">
       <!-- Identidad: correo verificado -->
       <div id="identity" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div id="idEmail">
@@ -128,6 +153,15 @@
           <button type="button" id="logoutBtn" class="shrink-0 text-sm font-semibold text-slate-600 hover:text-red-700">Salir</button>
         </div>
       </div>
+
+    <p id="idError" class="hidden mt-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+  </div>
+
+  <div id="roomsView">
+  <div class="grid lg:grid-cols-5 gap-6 items-start">
+
+    <!-- ============ FORMULARIO ============ -->
+    <form id="bookingForm" class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5" novalidate>
 
       <div id="editBanner" class="hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <div id="editText" class="font-semibold"></div>
@@ -239,6 +273,87 @@
     </section>
 
   </div>
+  </div><!-- /roomsView -->
+
+  <!-- ============ LUGARES DE TRABAJO (equipo Pulppo) ============ -->
+  <div id="seatsView" class="hidden">
+    <div id="seatsGate" class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 text-sm text-slate-700"></div>
+
+    <div id="seatsApp" class="hidden grid lg:grid-cols-5 gap-6 items-start">
+      <div class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5">
+        <div>
+          <label for="seatDate" class="block text-sm font-semibold mb-1.5">Fecha</label>
+          <input id="seatDate" type="date" class="field">
+        </div>
+
+        <div>
+          <div class="block text-sm font-semibold mb-1.5">¿Cuánto tiempo?</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="seatModeDay" class="seg-btn seg-on">Todo el día</button>
+            <button type="button" id="seatModeHours" class="seg-btn">Por horas</button>
+          </div>
+          <div id="seatHoursBox" class="hidden mt-3 grid grid-cols-2 gap-4">
+            <div>
+              <label for="seatStart" class="block text-sm font-semibold mb-1.5">Desde</label>
+              <select id="seatStart" class="field"></select>
+            </div>
+            <div>
+              <label for="seatEnd" class="block text-sm font-semibold mb-1.5">Hasta</label>
+              <select id="seatEnd" class="field"></select>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">Todo el día es de 8:00 a 20:00.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="seatName" class="block text-sm font-semibold mb-1.5">Tu nombre</label>
+            <input id="seatName" type="text" maxlength="80" autocomplete="name" placeholder="Nombre y apellido" class="field">
+          </div>
+          <div>
+            <label for="seatAgency" class="block text-sm font-semibold mb-1.5">Inmobiliaria</label>
+            <input id="seatAgency" type="text" maxlength="80" autocomplete="organization" placeholder="Tu inmobiliaria" class="field">
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm">
+          <div class="text-xs font-semibold text-slate-500 mb-0.5">Tu lugar</div>
+          <div id="seatPick">Toca un lugar libre en el croquis.</div>
+        </div>
+
+        <p id="seatError" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+
+        <button type="button" id="seatSubmit" disabled
+                class="w-full rounded-xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 transition-colors">
+          Reservar lugar
+        </button>
+      </div>
+
+      <section class="lg:col-span-3 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200" aria-labelledby="seatMapTitle">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-4">
+          <h2 id="seatMapTitle" class="text-lg font-bold">Croquis de la oficina <span id="seatFree" class="ml-1 text-sm font-normal text-slate-500"></span></h2>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full free-swatch"></span>Libre</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full hatch border"></span>Ocupado</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full mine-block border"></span>Tuyo</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full bg-teal"></span>Tu selección</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <div id="seatMapBox" class="min-w-[640px]"></div>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">Vista desde arriba: la ventana está arriba y la pared de la izquierda a la izquierda.</p>
+      </section>
+    </div>
+
+    <section id="seatMineBox" class="hidden mt-6 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h3 id="seatMineTitle" class="text-sm font-semibold">Mis lugares reservados</h3>
+        <button type="button" id="seatRefreshMine" class="text-xs font-semibold text-teal hover:text-teal-dark">Actualizar</button>
+      </div>
+      <div id="seatMineItems" class="space-y-2"></div>
+    </section>
+  </div>
 </div>
 
 <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
@@ -263,6 +378,13 @@ let pendingEmail = '';
 let mine = null;           // { bookings } | null (cargando)
 let editing = null;        // reserva que se está reagendando { id, roomId, date, ... }
 let busyAct = false;       // evita doble clic al cancelar
+let tab = 'rooms';         // pestaña activa: rooms | seats
+let seatBookings = [];     // reservas de lugar del día (según quién mira)
+let seatsAllowed = null;   // null = sin saber, true/false = permiso del equipo Pulppo
+let seatGateMsg = '';
+let selectedSeat = null;
+let seatMode = 'day';      // day | hours
+let seatMine = null;       // { bookings } | null
 
 /* ---------------- Utilidades ---------------- */
 const pad = (n) => String(n).padStart(2, '0');
@@ -303,8 +425,9 @@ function endSession(expired) {
   session = null; mine = null; codeStep = false;
   if (editing) stopEdit();
   saveSession();
+  seatsAllowed = null; seatBookings = []; seatMine = null; selectedSeat = null; seatGateMsg = '';
   renderIdentity(); renderMine();
-  if (cfg) { renderDayList(); render(); }
+  if (cfg) { renderDayList(); render(); renderSeatGate(); renderSeats(); renderSeatMine(); }
   if (expired) toast('Tu sesión venció. Verifica tu correo otra vez.', 'error');
 }
 
@@ -342,6 +465,7 @@ async function loadDay(silent) {
       $('date').value = cfg.today;
       if (data.date !== cfg.today) { await loadDay(true); return; }
       if (session) loadMine();
+      initSeats();
     }
     buildStartOptions();
     render();
@@ -621,6 +745,10 @@ function toast(msg, type) {
   $('toastBox').appendChild(el);
   setTimeout(() => el.remove(), 6000);
 }
+function showIdError(msg) {
+  $('idError').textContent = msg;
+  $('idError').classList.toggle('hidden', !msg);
+}
 function showFormError(msg) {
   $('formError').textContent = msg;
   $('formError').classList.toggle('hidden', !msg);
@@ -629,12 +757,12 @@ function showFormError(msg) {
 /* ---------------- Verificación de correo ---------------- */
 async function sendCode() {
   const email = $('email').value.trim().toLowerCase();
-  if (!email || !$('email').checkValidity()) { showFormError('Escribe un correo válido.'); return; }
-  showFormError('');
+  if (!email || !$('email').checkValidity()) { showIdError('Escribe un correo válido.'); return; }
+  showIdError('');
   $('sendCodeBtn').disabled = true; $('resendBtn').disabled = true;
   try {
     const r = await api({ action: 'requestCode', email });
-    if (!r.ok) { showFormError(r.error || 'No se pudo enviar el código.'); return; }
+    if (!r.ok) { showIdError(r.error || 'No se pudo enviar el código.'); return; }
     pendingEmail = email;
     codeStep = true;
     $('code').value = '';
@@ -643,7 +771,7 @@ async function sendCode() {
     $('code').focus();
   } catch (err) {
     console.error(err);
-    showFormError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+    showIdError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
   } finally {
     $('sendCodeBtn').disabled = false; $('resendBtn').disabled = false;
   }
@@ -651,12 +779,12 @@ async function sendCode() {
 
 async function verifyCode() {
   const code = $('code').value.trim();
-  if (code.length !== 6) { showFormError('Escribe el código de 6 dígitos.'); return; }
-  showFormError('');
+  if (code.length !== 6) { showIdError('Escribe el código de 6 dígitos.'); return; }
+  showIdError('');
   $('verifyBtn').disabled = true;
   try {
     const r = await api({ action: 'verifyCode', email: pendingEmail, code });
-    if (!r.ok) { showFormError(r.error || 'No se pudo verificar el código.'); return; }
+    if (!r.ok) { showIdError(r.error || 'No se pudo verificar el código.'); return; }
     session = { token: r.token, email: r.email, admin: r.admin };
     saveSession();
     codeStep = false;
@@ -664,9 +792,10 @@ async function verifyCode() {
     toast('Correo verificado.');
     await loadDay(true);
     loadMine();
+    if (tab === 'seats') loadSeats();
   } catch (err) {
     console.error(err);
-    showFormError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+    showIdError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
   } finally {
     $('verifyBtn').disabled = false;
   }
@@ -675,7 +804,7 @@ async function verifyCode() {
 $('sendCodeBtn').addEventListener('click', sendCode);
 $('resendBtn').addEventListener('click', () => { $('email').value = pendingEmail; sendCode(); });
 $('verifyBtn').addEventListener('click', verifyCode);
-$('changeEmailBtn').addEventListener('click', () => { codeStep = false; showFormError(''); renderIdentity(); $('email').focus(); });
+$('changeEmailBtn').addEventListener('click', () => { codeStep = false; showIdError(''); renderIdentity(); $('email').focus(); });
 $('logoutBtn').addEventListener('click', async () => { endSession(false); await loadDay(true); });
 $('refreshMine').addEventListener('click', loadMine);
 $('email').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendCode(); } });
@@ -804,6 +933,7 @@ async function cancelBooking(b) {
 document.addEventListener('click', (e) => {
   const btn = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
   if (!btn) return;
+  if (btn.dataset.act === 'seatcancel') { cancelSeat(btn.dataset.id); return; }
   const b = findBooking(btn.dataset.id);
   if (!b) return;
   if (btn.dataset.act === 'cancel') cancelBooking(b);
@@ -870,8 +1000,299 @@ $('bookingForm').addEventListener('submit', async (ev) => {
   }
 });
 
+/* ======================================================================
+ *  LUGARES DE TRABAJO (exclusivo equipo Pulppo)
+ * ====================================================================== */
+function addDays(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
+}
+const seatInfo = (n) => ((cfg && cfg.seatMap) ? cfg.seatMap.seats.find((s) => s.n === n) : null) || { n, zone: '' };
+
+function setTab(name) {
+  tab = name;
+  $('roomsView').classList.toggle('hidden', name !== 'rooms');
+  $('seatsView').classList.toggle('hidden', name !== 'seats');
+  $('tabRooms').classList.toggle('tab-on', name === 'rooms');
+  $('tabSeats').classList.toggle('tab-on', name === 'seats');
+  try { history.replaceState(null, '', name === 'seats' ? '#lugares' : location.pathname + location.search); } catch (e) {}
+  if (name === 'seats') loadSeats();
+}
+
+function initSeats() {
+  if (!cfg.seatMap) return;
+  $('seatDate').min = cfg.today;
+  $('seatDate').max = addDays(cfg.today, cfg.seatMaxDaysAhead || 60);
+  $('seatDate').value = cfg.today;
+  try {
+    $('seatName').value = localStorage.getItem('rs_seat_name') || '';
+    $('seatAgency').value = localStorage.getItem('rs_seat_agency') || '';
+  } catch (e) {}
+  buildSeatTimes();
+  renderSeatGate();
+  renderSeats();
+  if (typeof location !== 'undefined' && location.hash === '#lugares') setTab('seats');
+}
+
+function seatRange() {
+  const open = cfg.openHour * 60, close = cfg.closeHour * 60;
+  if (seatMode === 'day') return { s: open, e: close, allDay: true };
+  const a = $('seatStart').value, b = $('seatEnd').value;
+  if (!a || !b) return null;
+  const s = toMin(a), e = toMin(b);
+  return e > s ? { s, e, allDay: false } : null;
+}
+
+function buildSeatTimes() {
+  const step = cfg.seatStep || 30, open = cfg.openHour * 60, close = cfg.closeHour * 60;
+  const nowMin = $('seatDate').value === cfg.today ? nowMinutes() : -1;
+  const keep = $('seatStart').value;
+  const starts = [];
+  for (let m = open; m < close; m += step) if (m + step > nowMin) starts.push(fromMin(m));
+  $('seatStart').innerHTML = starts.length
+    ? starts.map((t) => `<option value="${t}">${t}</option>`).join('')
+    : '<option value="">Sin horarios hoy</option>';
+  if (starts.includes(keep)) $('seatStart').value = keep;
+  else if (starts.includes('09:00')) $('seatStart').value = '09:00';
+  buildSeatEnds();
+}
+
+function buildSeatEnds() {
+  const step = cfg.seatStep || 30, close = cfg.closeHour * 60;
+  const keep = $('seatEnd').value;
+  const s = $('seatStart').value ? toMin($('seatStart').value) : close;
+  const ends = [];
+  for (let m = s + step; m <= close; m += step) ends.push(fromMin(m));
+  $('seatEnd').innerHTML = ends.map((t) => `<option value="${t}">${t}</option>`).join('');
+  const dflt = fromMin(Math.min(s + 240, close));
+  if (ends.includes(keep)) $('seatEnd').value = keep;
+  else if (ends.includes(dflt)) $('seatEnd').value = dflt;
+}
+
+function setSeatMode(mode) {
+  seatMode = mode;
+  $('seatModeDay').classList.toggle('seg-on', mode === 'day');
+  $('seatModeHours').classList.toggle('seg-on', mode === 'hours');
+  $('seatHoursBox').classList.toggle('hidden', mode !== 'hours');
+  if (cfg && mode === 'hours') buildSeatTimes();
+  seatError('');
+  if (cfg) renderSeats();
+}
+
+function seatError(msg) {
+  $('seatError').textContent = msg;
+  $('seatError').classList.toggle('hidden', !msg);
+}
+
+function renderSeatGate(msg) {
+  if (msg) seatGateMsg = msg;
+  let text = '';
+  if (!session) text = 'Esta sección es para los brokers de Pulppo. Verifica tu correo (en el recuadro de arriba) para ver los lugares y reservar el tuyo.';
+  else if (seatsAllowed === false) text = seatGateMsg || 'Tu correo no está autorizado para reservar lugares.';
+  else if (seatsAllowed === null) text = 'Cargando los lugares…';
+  $('seatsGate').textContent = text;
+  $('seatsGate').classList.toggle('hidden', !text);
+  $('seatsApp').classList.toggle('hidden', !!text);
+  $('seatMineBox').classList.toggle('hidden', !!text);
+}
+
+async function loadSeats(silent) {
+  if (!cfg || !CONFIGURED || !cfg.seatMap) return;
+  if (!session) { seatsAllowed = null; renderSeatGate(); return; }
+  try {
+    const r = await api({ action: 'seatsDay', token: session.token, date: $('seatDate').value || cfg.today });
+    if (r.authRequired) { endSession(true); return; }
+    if (r.forbidden) { seatsAllowed = false; seatBookings = []; seatGateMsg = r.error; renderSeatGate(); return; }
+    if (!r.ok) throw new Error(r.error || 'Respuesta inválida');
+    seatsAllowed = true;
+    seatBookings = r.bookings;
+    renderSeatGate();
+    renderSeats();
+    if (seatMine === null) loadSeatMine();
+  } catch (err) {
+    console.error(err);
+    if (!silent) toast('No pudimos cargar los lugares. Inténtalo de nuevo.', 'error');
+  }
+}
+
+function seatHit(n, range) {
+  if (!range) return null;
+  return seatBookings.find((b) => b.seat === n && range.s < toMin(b.end) && range.e > toMin(b.start)) || null;
+}
+
+function renderSeats() {
+  if (!cfg || !cfg.seatMap) return;
+  const range = seatRange();
+  const m = cfg.seatMap;
+  if (selectedSeat && seatHit(selectedSeat, range)) selectedSeat = null;
+
+  let svg = `<svg viewBox="0 0 ${m.width} ${m.height}" class="w-full h-auto" role="group" aria-label="Croquis de la oficina con los lugares de trabajo">
+    <defs><pattern id="seatHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#F6D9D9"/><rect width="2.6" height="8" fill="rgba(185,28,28,.32)"/></pattern></defs>
+    <rect x="2" y="2" width="${m.width - 4}" height="${m.height - 4}" rx="18" fill="#FAFBFC" stroke="#CBD5E1" stroke-width="3"/>`;
+  (m.shapes || []).forEach((h) => {
+    svg += `<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="10" fill="${h.fill}" stroke="${h.stroke}" stroke-width="2"/>`;
+    if (h.label) {
+      const rot = h.rot ? ` transform="rotate(${h.rot} ${h.lx} ${h.ly})"` : '';
+      svg += `<text x="${h.lx}" y="${h.ly}" text-anchor="middle" dominant-baseline="central" font-size="${h.lf || 15}" font-weight="700" fill="${h.lc || '#4B7BB0'}" letter-spacing="${h.ls == null ? 3 : h.ls}"${rot}>${esc(h.label)}</text>`;
+    }
+  });
+  (m.texts || []).forEach((t) => {
+    svg += `<text x="${t.x}" y="${t.y}" font-size="15" font-weight="600" fill="#64748B">${esc(t.text)}</text>`;
+  });
+  m.seats.forEach((s) => {
+    const hit = seatHit(s.n, range);
+    const state = hit ? (hit.mine ? 'mine' : 'taken') : (selectedSeat === s.n ? 'selected' : 'free');
+    const label = { free: 'libre', taken: 'ocupado', mine: 'reservado por ti', selected: 'seleccionado' }[state];
+    const who = hit && hit.detail && !hit.mine && hit.name ? ' · ' + hit.name + (hit.agency ? ' (' + hit.agency + ')' : '') : '';
+    svg += `<g class="seat seat-${state}" data-seat="${s.n}" role="button" tabindex="${state === 'taken' ? -1 : 0}" aria-label="Lugar ${s.n}, ${esc(s.zone)}, ${label}">
+      <title>Lugar ${s.n} · ${esc(s.zone)} · ${label}${esc(who)}</title>
+      <circle cx="${s.x}" cy="${s.y}" r="25"/>
+      <text x="${s.x}" y="${s.y}" dy=".35em" text-anchor="middle" font-size="19" font-weight="800">${s.n}</text></g>`;
+  });
+  svg += '</svg>';
+  $('seatMapBox').innerHTML = svg;
+
+  $('seatPick').innerHTML = selectedSeat
+    ? `Lugar <strong>${selectedSeat}</strong> · ${esc(seatInfo(selectedSeat).zone)}`
+    : 'Toca un lugar libre en el croquis.';
+  const free = m.seats.filter((s) => !seatHit(s.n, range)).length;
+  $('seatFree').textContent = range ? `· ${free} de ${m.seats.length} libres` : '';
+  $('seatSubmit').disabled = !(session && seatsAllowed && selectedSeat && range && !submitting);
+}
+
+function onSeatClick(e) {
+  const g = e.target && e.target.closest ? e.target.closest('[data-seat]') : null;
+  if (!g) return;
+  const n = Number(g.dataset.seat);
+  const hit = seatHit(n, seatRange());
+  if (hit) {
+    if (hit.mine) toast(`El lugar ${n} ya es tuyo en ese horario.`);
+    else toast(`El lugar ${n} ya está ocupado en ese horario.`, 'error');
+    return;
+  }
+  selectedSeat = selectedSeat === n ? null : n;
+  seatError('');
+  renderSeats();
+}
+
+async function bookSeat() {
+  seatError('');
+  if (!session) return seatError('Primero verifica tu correo (recuadro de arriba).');
+  const range = seatRange();
+  if (!selectedSeat) return seatError('Elige un lugar en el croquis.');
+  if (!range) return seatError('Elige una hora de inicio y una de fin válidas.');
+  const name = $('seatName').value.trim();
+  const agency = $('seatAgency').value.trim();
+  if (!name) return seatError('Escribe tu nombre.');
+  if (!agency) return seatError('Escribe el nombre de tu inmobiliaria.');
+
+  submitting = true;
+  $('seatSubmit').disabled = true;
+  $('seatSubmit').textContent = 'Reservando…';
+  try {
+    const r = await api({
+      action: 'seatBook', token: session.token, seat: selectedSeat, date: $('seatDate').value,
+      allDay: range.allDay, start: $('seatStart').value, end: $('seatEnd').value, name, agency
+    });
+    if (r.ok) {
+      toast(r.message || 'Lugar reservado.');
+      if (r.chat && r.chat !== 'OK') toast('El lugar se reservó, pero el aviso a Chat falló: ' + r.chat, 'error');
+      try { localStorage.setItem('rs_seat_name', name); localStorage.setItem('rs_seat_agency', agency); } catch (e) {}
+      selectedSeat = null;
+      seatMine = null;
+    } else if (r.authRequired) {
+      endSession(true);
+    } else if (r.forbidden) {
+      seatsAllowed = false; seatGateMsg = r.error; renderSeatGate();
+    } else {
+      seatError(r.error || 'No se pudo reservar el lugar.');
+      if (r.conflict) toast('Alguien acaba de tomar ese lugar. Elige otro.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    seatError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    submitting = false;
+    $('seatSubmit').textContent = 'Reservar lugar';
+    await loadSeats(true);
+  }
+}
+
+async function loadSeatMine() {
+  if (!session || !cfg || !cfg.seatMap) return;
+  try {
+    const r = await api({ action: 'seatMine', token: session.token });
+    if (r.authRequired) { endSession(true); return; }
+    if (r.forbidden) { seatsAllowed = false; seatGateMsg = r.error; renderSeatGate(); return; }
+    if (!r.ok) throw new Error(r.error);
+    seatMine = { bookings: r.bookings, admin: r.admin };
+  } catch (err) {
+    console.error(err);
+    seatMine = { bookings: [], admin: false };
+  }
+  renderSeatMine();
+}
+
+function seatCard(b) {
+  const meta = (session && session.admin) ? [b.name, b.agency, b.email].filter(Boolean).map(esc) : [];
+  return `
+    <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="font-semibold">Lugar ${b.seat} <span class="font-normal text-slate-500">· ${esc(b.zone)}</span></div>
+        <div class="text-sm text-slate-600 capitalize">${esc(prettyDate(b.date, true))} · ${b.allDay ? 'Todo el día' : esc(b.start) + '–' + esc(b.end)}</div>
+        ${meta.length ? `<div class="text-xs text-slate-500 mt-0.5">${meta.join(' · ')}</div>` : ''}
+      </div>
+      ${b.editable ? `<button type="button" data-act="seatcancel" data-id="${esc(b.id)}" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Cancelar</button>` : ''}
+    </div>`;
+}
+
+function renderSeatMine() {
+  if (!session) return;
+  $('seatMineTitle').textContent = session.admin ? 'Todos los lugares reservados · próximos días' : 'Mis lugares reservados';
+  if (seatMine === null) { $('seatMineItems').innerHTML = '<p class="text-sm text-slate-500">Cargando…</p>'; return; }
+  $('seatMineItems').innerHTML = seatMine.bookings.length
+    ? seatMine.bookings.map(seatCard).join('')
+    : '<p class="text-sm text-slate-500">Todavía no tienes lugares reservados.</p>';
+}
+
+async function cancelSeat(id) {
+  if (!session || busyAct) return;
+  const b = [...(seatMine ? seatMine.bookings : []), ...seatBookings].find((x) => x.id === id);
+  if (!b) return;
+  const cuando = `${prettyDate(b.date, true)} · ${b.allDay ? 'Todo el día' : b.start + '–' + b.end}`;
+  if (!window.confirm(`¿Cancelar el lugar ${b.seat}?\n\n${cuando}\n\nQuedará libre para otra persona.`)) return;
+  busyAct = true;
+  try {
+    const r = await api({ action: 'seatCancel', token: session.token, id });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo cancelar.', 'error'); return; }
+    toast(r.message || 'Reserva cancelada.');
+    if (r.chat && r.chat !== 'OK') toast('La reserva se canceló, pero el aviso a Chat falló: ' + r.chat, 'error');
+    await loadSeats(true);
+    await loadSeatMine();
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  } finally {
+    busyAct = false;
+  }
+}
+
+$('tabRooms').addEventListener('click', () => setTab('rooms'));
+$('tabSeats').addEventListener('click', () => setTab('seats'));
+$('seatModeDay').addEventListener('click', () => setSeatMode('day'));
+$('seatModeHours').addEventListener('click', () => setSeatMode('hours'));
+$('seatDate').addEventListener('change', async () => { selectedSeat = null; seatError(''); if (cfg) buildSeatTimes(); await loadSeats(true); });
+$('seatStart').addEventListener('input', () => { buildSeatEnds(); renderSeats(); });
+$('seatEnd').addEventListener('input', renderSeats);
+$('seatMapBox').addEventListener('click', onSeatClick);
+$('seatMapBox').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeatClick(e); } });
+$('seatSubmit').addEventListener('click', bookSeat);
+$('seatRefreshMine').addEventListener('click', () => { seatMine = null; renderSeatMine(); loadSeatMine(); });
+
 /* Actualiza cada 30 s mientras la pestaña está visible */
-setInterval(() => { if (!document.hidden && !submitting) loadDay(true); }, 30000);
+setInterval(() => { if (!document.hidden && !submitting) { loadDay(true); if (tab === 'seats') loadSeats(true); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) loadDay(true); });
 
 loadSession();
