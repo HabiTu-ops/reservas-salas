@@ -447,7 +447,7 @@
   </div>
 
   <p id="officeNote" class="mt-10 text-center text-sm font-semibold text-slate-600">Horario de trabajo de la oficina: lunes a viernes de 7:00 a 20:00 h · sábados de 9:00 a 15:00 h · domingos cerrado.</p>
-  <p class="mt-1 text-center text-xs text-slate-400">Versión 2026-10-16 · i</p>
+  <p class="mt-1 text-center text-xs text-slate-400">Versión 2026-10-16 · k</p>
 </div>
 
 <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
@@ -813,13 +813,14 @@ function bookingCard(b, withDate) {
 
   const btn = 'rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold';
   const actions = [];
-  if (b.canMarkArrival && !b.arrived) actions.push(`<button type="button" data-act="arrive" data-id="${esc(b.id)}" class="${btn} border-emerald-300 text-emerald-800 hover:bg-emerald-50">🚪 Marcar llegada</button>`);
+  if (b.canMarkArrival && !b.arrived) actions.push(`<button type="button" data-act="arrive" data-id="${esc(b.id)}" title="${isStaff() ? 'Avisa en el chat que la visita ya llegó' : 'Avisa al equipo para que baje a recepción por la visita'}" class="${btn} border-emerald-300 text-emerald-800 hover:bg-emerald-50">${isStaff() ? '🚪 Marcar llegada' : '🚪 Avisar llegada'}</button>`);
   if (b.arrivalUrl) actions.push(`<button type="button" data-act="copyarr" data-url="${esc(b.arrivalUrl)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Copiar enlace de llegada</button>`);
   if (b.editable) {
     actions.push(`<button type="button" data-act="resched" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Reagendar</button>`);
     actions.push(`<button type="button" data-act="cancel" data-id="${esc(b.id)}" class="${btn} border-red-200 text-red-700 hover:bg-red-50">Cancelar</button>`);
   }
-  const arrived = b.arrived ? `<div class="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">✅ Llegó a las ${esc(b.arrived)}</div>` : '';
+  const arrived = b.arrived ? `<div class="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">✅ Llegó a las ${esc(b.arrived)}</div>`
+    : (b.arrivalOpensAt ? `<div class="mt-1 text-xs text-slate-500">🚪 Podrás avisar la llegada de la visita desde las ${esc(b.arrivalOpensAt)}</div>` : '');
 
   return `
     <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-start gap-x-4 gap-y-1">
@@ -1688,13 +1689,14 @@ async function copyText(text) {
 
 async function markArrival(b) {
   if (!session || busyAct) return;
-  if (!window.confirm(`¿Marcar que ya llegó ${b.visitor}?\n\nSe avisará en el chat.`)) return;
+  const ask = isStaff() ? `¿Marcar que ya llegó ${b.visitor}?\n\nSe avisará en el chat.` : `¿Avisar que ya llegó la visita?\n\n${b.visitor} · ${b.start}–${b.end} · ${roomName(b.roomId)}\n\nAvisamos al equipo para que baje a recepción por ellos.`;
+  if (!window.confirm(ask)) return;
   busyAct = true;
   try {
     const r = await api({ action: 'arrivalMark', token: session.token, roomId: b.roomId, date: b.date, id: b.id });
     if (r.authRequired) { endSession(true); return; }
     if (!r.ok) { toast(r.error || 'No se pudo marcar la llegada.', 'error'); return; }
-    toast(r.already ? r.message : 'Llegada marcada. Ya se avisó.');
+    toast(r.already ? r.message : (isStaff() ? 'Llegada marcada. Ya se avisó.' : 'Listo, ya avisamos al equipo. Van a bajar a recepción por la visita.'));
     if (r.chat && r.chat !== 'OK') toast('Se marcó, pero el aviso a Chat falló: ' + r.chat, 'error');
     await loadDay(true);
     if (tab === 'today') loadToday(true);
