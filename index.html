@@ -1,1884 +1,1811 @@
-/**
- * ============================================================
- *  RESERVA DE SALAS Y VISITAS  ·  Google Apps Script (Web App)
- * ============================================================
- *  - Cada sala tiene su propio calendario.
- *  - La disponibilidad se lee de esos calendarios.
- *  - Cada reserva = evento en el calendario de la sala
- *    + fila en Google Sheets + aviso a Google Chat + correo a quien agenda.
- *  - Quien agendó (o un administrador) puede CANCELAR o REAGENDAR desde la página.
- *
- *  PRIVACIDAD
- *  - Cualquiera puede ver qué salas están ocupadas (solo horarios).
- *  - Los detalles (visita, motivo, host...) solo los ve quien agendó,
- *    después de verificar su correo con un código.
- *  - Los ADMINS ven y administran todo.
- *
- *  Si cambias el código, publica una NUEVA VERSIÓN de la implementación
- *  (Implementar → Administrar implementaciones → lápiz → Nueva versión).
- */
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Reserva de salas y visitas</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
 
-// ===================== CONFIG =====================
-const CONFIG = {
-  SHEET_ID: '1XxFxqcGysxunU_1mFbn93NNPWhHndxHDYntQf2GdsRU', // hoja de reservas (vacío = crear una nueva)
-  SHEET_NAME: 'Reservas',
-
-  TIMEZONE: 'America/Mexico_City',
-  VERSION: 'l',     // versión del script: la página la muestra al final para comprobar que ambos están al día
-  DOMAIN: 'tuhabi.mx',
-
-  OFFICE_NAME: 'Oficina Principal Reforma - MX',
-  OFFICE_ADDRESS: 'Av. P.º de la Reforma 333-Piso 2, Juárez, Cuauhtémoc, 06500 Ciudad de México, CDMX',
-  PAGE_URL: 'https://habitu-ops.github.io/reservas-salas/',   // link de la página (va en los correos de lugares)
-  OFFICE_HOURS_NOTE: 'Horario de trabajo de la oficina: lunes a viernes de 7:00 a 20:00 h · sábados de 9:00 a 15:00 h · domingos cerrado.',   // mensaje del pie de página
-
-  // Se invita SIEMPRE a esta cuenta a cada reserva
-  ALWAYS_GUEST: 'servicioalcliente@tuhabi.mx',
-  // Correos de confirmación (nueva, reagendada, cancelada) a quien agenda
-  SEND_CONFIRMATION_EMAIL: true,
-
-  // ADMINISTRADORES: ven y administran todas las reservas.
-  ADMINS: ['servicioalcliente@tuhabi.mx'],
-  SESSION_HOURS: 168,      // duración de la sesión verificada (168 h = 7 días)
-
-  // Listas desplegables del formulario
-  HOSTS: ['Tuhabi', 'Pulppo'],
-  // Los motivos dependen del host
-  PURPOSES_BY_HOST: {
-    'Tuhabi': ['Asesoría comercial Seller', 'Asesoría comercial Buyer'],
-    'Pulppo': ['Reunión semanal Pulppo', 'Firma Pulppo', 'Capacitación Pulppo']
-  },
-
-  // Hosts que piden "Inmobiliaria" y UN solo nombre (el broker responsable)
-  AGENCY_HOSTS: ['Pulppo'],
-  AGENCY_LABEL: 'Inmobiliaria',
-  BROKER_LABEL: 'Nombre del broker responsable',
-
-  // Hosts que deben capturar un teléfono/WhatsApp, y cómo se llama ese campo
-  NUMBER_HOSTS: ['Pulppo'],
-  NUMBER_LABEL: 'Teléfono o WhatsApp del broker',
-
-  MAX_DURATION_MIN: 120,   // duración máxima de una reserva (minutos)
-  OPEN_HOUR: 8,
-  CLOSE_HOUR: 20,
-  STEP_MINUTES: 15,
-
-  // Webhook de Google Chat
-  WEBHOOK_URL: 'https://chat.googleapis.com/v1/spaces/AAQAcJYTUNY/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=ElnQQHsfoE9zFRz0GVubalH_mMHwpsxZ-PqbZdsMa6s',
-
-  // ===== DÍAS CERRADOS =====
-  // Días de la semana en que la oficina está cerrada (0 = domingo, 1 = lunes ... 6 = sábado). Ej.: [0, 6] = fines de semana.
-  CLOSED_WEEKDAYS: [0],            // domingos cerrados
-  // Horario distinto en ciertos días de la semana (0 = domingo ... 6 = sábado). Se aplica a salas y lugares.
-  WEEKDAY_HOURS: { 6: { open: 9, close: 15 } },   // sábados de 9:00 a 15:00
-  // Hoja donde se anotan los festivos y cierres (también se administran desde la pestaña "Hoy en la oficina").
-  CLOSURES_SHEET_NAME: 'Días cerrados',
-
-  // ===== RECEPCIÓN =====
-  // Correos que pueden ver la pestaña "Hoy en la oficina" (solo lectura). Los ADMINS siempre pueden.
-  RECEPTION: ['servicioalcliente@tuhabi.mx'],   // (esta cuenta ya es administradora, así que además puede editar)
-
-  // ===== LLEGADA A RECEPCIÓN ("Ya llegué") =====
-  ARRIVAL_ENABLED: true,
-  ARRIVAL_MINUTES_BEFORE: 60,       // el botón de la visita funciona desde 60 min antes de la cita ...
-  ARRIVAL_MINUTES_AFTER: 30,        // ... y hasta 30 min después de que termina
-  ARRIVAL_CHAT: true,               // false = no se escribe en el chat (solo llegan los correos)
-  ARRIVAL_MENTION_ALL: true,        // el aviso de Chat menciona a todos los del espacio (@todos) para que suene
-  // Además del Chat, estas personas (Cristyan Balbuena y Samuel Martínez) reciben un correo cuando llega alguien.
-  ARRIVAL_NOTIFY_EMAILS: ['cristyanbalbuena@tuhabi.mx', 'samuelmartinez@tuhabi.mx'],
-  ARRIVAL_NOTIFY_SCHEDULER: true,   // también se avisa por correo a quien agendó la visita
-
-  // ===== AUTOMATIZACIONES (se activan ejecutando instalarAutomatizaciones) =====
-  DAILY_SUMMARY_HOUR: 7,            // aviso de Chat con las visitas y los lugares del día
-  DAILY_SUMMARY_SEND_EMPTY: false,  // true = también avisar los días sin reservas
-  SEND_REMINDERS: true,
-  REMINDER_HOUR: 17,                // correo de recordatorio a quien reservó, para el día siguiente
-
-  // ===== LUGARES DE TRABAJO (exclusivo equipo Pulppo) =====
-  SEAT_SHEET_NAME: 'Lugares',
-  // Quién puede reservar lugares.
-  //  false = cualquier correo VERIFICADO (los brokers de las inmobiliarias usan correos de distintos dominios)
-  //  true  = solo los dominios / correos de las dos listas de abajo (los ADMINS siempre pueden)
-  SEAT_RESTRICT: false,
-  SEAT_ALLOWED_DOMAINS: [],
-  SEAT_ALLOWED_EMAILS: [],
-  // Webhook de Chat para los avisos de lugares (vacío = el mismo espacio que las visitas)
-  SEAT_WEBHOOK_URL: '',
-  SEAT_OPEN_HOUR: 7,           // horario para reservar lugares: de 7:00 ...
-  SEAT_CLOSE_HOUR: 20,         // ... a 20:00
-  SEAT_STEP_MINUTES: 30,       // las reservas por horas van en bloques de 30 min
-  SEAT_MAX_DAYS_AHEAD: 60,     // con cuántos días de anticipación se puede reservar
-
-  // Croquis de la oficina (vista desde arriba): ventana arriba, pared izquierda a la izquierda.
-  // x, y = posición en el lienzo (ancho x alto indicados abajo).  Para mover o agregar un lugar solo se edita esta lista.
-  SEAT_MAP: {
-    width: 760, height: 889,
-    // Cada figura puede llevar un texto encima: label, lx, ly (centro), y opcionalmente rot (giro), lc (color), lf (tamaño), ls (espacio entre letras)
-    shapes: [
-      { x: 20,  y: 14,  w: 720, h: 26,  fill: '#DCEBFA', stroke: '#B6D3F0', label: 'VENTANA', lx: 380, ly: 27, lf: 12, ls: 4 },
-      { x: 14,  y: 62,  w: 46,  h: 130, fill: '#E9D8BF', stroke: '#C7AE86', label: 'ESCRITORIO', lx: 37, ly: 127, rot: -90, lc: '#8A6D3B', lf: 11, ls: 1.5 },   // escritorio del lugar 1: pegado a la pared (no a la ventana)
-      { x: 250, y: 108, w: 400, h: 50,  fill: '#E9D8BF', stroke: '#C7AE86', lc: '#8A6D3B', lf: 12, ls: 2, label: 'MESA VENTANA', lx: 450, ly: 133 },   // 1 lugar de un lado y 3 enfrente
-      { x: 14,  y: 250, w: 40,  h: 290, fill: '#E9D8BF', stroke: '#C7AE86', label: 'PERIQUERAS', lx: 34, ly: 395, rot: -90, lc: '#8A6D3B', lf: 12, ls: 2 },   // barra de la pared morada (periqueras)
-      { x: 250, y: 309, w: 400, h: 56,  fill: '#E9D8BF', stroke: '#C7AE86', lc: '#8A6D3B', lf: 12, ls: 2, label: 'MESA 1', lx: 450, ly: 337 },   // mesa 1 (6 lugares)
-      { x: 250, y: 529, w: 400, h: 56,  fill: '#E9D8BF', stroke: '#C7AE86', lc: '#8A6D3B', lf: 12, ls: 2, label: 'MESA 2', lx: 450, ly: 557 },   // mesa 2 (6 lugares)
-      { x: 250, y: 749, w: 400, h: 56,  fill: '#E9D8BF', stroke: '#C7AE86', lc: '#8A6D3B', lf: 12, ls: 2, label: 'MESA 3', lx: 450, ly: 777 }   // mesa 3 (6 lugares)
-    ],
-    texts: [],
-    seats: [
-      { n: 1, x: 98, y: 127, zone: 'Escritorio pared' },
-      { n: 2, x: 450, y: 76, zone: 'Mesa ventana' },   // junto a la ventana, al centro
-      { n: 3, x: 590, y: 76, zone: 'Mesa ventana' },   // junto a la ventana, a la derecha
-      { n: 4, x: 310, y: 190, zone: 'Mesa ventana' },
-      { n: 5, x: 450, y: 190, zone: 'Mesa ventana' },
-      { n: 6, x: 590, y: 190, zone: 'Mesa ventana' },
-      { n: 7, x: 310, y: 275, zone: 'Mesa 1' },
-      { n: 8, x: 450, y: 275, zone: 'Mesa 1' },
-      { n: 9, x: 590, y: 275, zone: 'Mesa 1' },
-      { n: 10, x: 310, y: 399, zone: 'Mesa 1' },
-      { n: 11, x: 450, y: 399, zone: 'Mesa 1' },
-      { n: 12, x: 590, y: 399, zone: 'Mesa 1' },
-      { n: 13, x: 310, y: 495, zone: 'Mesa 2' },
-      { n: 14, x: 450, y: 495, zone: 'Mesa 2' },
-      { n: 15, x: 590, y: 495, zone: 'Mesa 2' },
-      { n: 16, x: 310, y: 619, zone: 'Mesa 2' },
-      { n: 17, x: 450, y: 619, zone: 'Mesa 2' },
-      { n: 18, x: 590, y: 619, zone: 'Mesa 2' },
-      { n: 19, x: 310, y: 715, zone: 'Mesa 3' },
-      { n: 20, x: 450, y: 715, zone: 'Mesa 3' },
-      { n: 21, x: 590, y: 715, zone: 'Mesa 3' },
-      { n: 22, x: 310, y: 839, zone: 'Mesa 3' },
-      { n: 23, x: 450, y: 839, zone: 'Mesa 3' },
-      { n: 24, x: 590, y: 839, zone: 'Mesa 3' },
-      { n: 25, x: 124, y: 290, zone: 'Periqueras pared morada' },
-      { n: 26, x: 124, y: 360, zone: 'Periqueras pared morada' },
-      { n: 27, x: 124, y: 430, zone: 'Periqueras pared morada' },
-      { n: 28, x: 124, y: 500, zone: 'Periqueras pared morada' }
-    ]
-  },
-
-  ROOMS: [
-    { id: 'saltillo-10',     name: 'Sala Saltillo #10',     floor: 'Planta 2',  capacity: 4,  calendarId: 'c_6a639bf3ebc3dbffe60b236ef10c321809283f69b1915a989dc0a170f48c833b@group.calendar.google.com' },
-    { id: 'barranquilla-11', name: 'Sala Barranquilla #11', floor: 'Planta 2',  capacity: 4,  calendarId: 'c_6b8ec1d2f4ea135f3ee8c1e23a1b18c6c8203b0a921395d92d66cf9eb7896da6@group.calendar.google.com' },
-    { id: 'cali-9',          name: 'Sala Cali #9',          floor: 'Planta 2',  capacity: 6,  calendarId: 'c_1260908ed17e4e044838c22adbe4ee81ae26657175f25c6b265d887a93b96a65@group.calendar.google.com' },
-    { id: 'leon-8',          name: 'Sala León #8',          floor: 'Planta 2',  capacity: 8,  calendarId: 'c_b0a5cb8cc61ef6df625432c8e3585aadaaf883d1d1cb2de5ca74f5357b8370c3@group.calendar.google.com' },
-    { id: 'capacitaciones',  name: 'Sala Capacitaciones',   floor: '2-2',       capacity: 40, calendarId: 'c_d86d75cd2a161805263480c1fa427bdca7592c56af5304d05a751e317be9a331@group.calendar.google.com' },
-    { id: 'bogota-4',        name: 'Sala Bogota #4',        floor: '3-Interno', capacity: 4,  calendarId: 'c_d3d2d66e78a5a833a695364e5f49366e5da4975710131ff5964cfdf181e73871@group.calendar.google.com' },
-    { id: 'pachuca-5',       name: 'Sala Pachuca #5',       floor: '3-Interno', capacity: 4,  calendarId: 'c_324e58c2589730f810cc89dc201e55d9a73a872053bab9af4c380709290962a9@group.calendar.google.com' },
-    { id: 'cmdx-6',          name: 'Sala CMDX #6',          floor: '3-Interno', capacity: 6,  calendarId: 'c_c71663033e256777079b0360fd5857315e7733b575640e907e173cb934cd7c8d@group.calendar.google.com' }
-  ]
-  // El Comedor Piso 2 y la Sala Medellin #7 no forman parte del sistema (no se leen ni se reservan).
-};
-
-const HEADERS = [
-  'ID', 'Creado', 'Fecha', 'Inicio', 'Fin', 'Duración (min)', 'Sala',
-  'Host', 'Visita', 'Motivo', 'Asistentes', 'Email quien agenda', 'ID evento Calendar',
-  'Teléfono / WhatsApp', 'Aviso Chat', 'Estado', 'Inmobiliaria', 'Llegada'
-];
-// Columnas de la hoja (1 = A)
-const COL_ARRIVAL = 18;
-const COL_DATE = 3, COL_START = 4, COL_END = 5, COL_DUR = 6, COL_ROOM = 7, COL_EVENT = 13, COL_CHAT = 15, COL_STATUS = 16;
-
-// ===================== SETUP / MANTENIMIENTO =====================
-/** Ejecuta esta función tras cada actualización: crea la hoja, pide permisos y revisa los calendarios. */
-function setup() {
-  const ss = getSpreadsheet_();
-  const sh = getSheet_();
-  sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
-  secret_(); // crea la llave de sesiones
-  CONFIG.ROOMS.forEach(function (r) {
-    const cal = CalendarApp.getCalendarById(r.calendarId);
-    Logger.log((cal ? 'OK      ' : 'FALTA   ') + r.name);
-  });
-  Logger.log('Hoja de reservas: ' + ss.getUrl());
-  Logger.log('Correos que se pueden enviar hoy: ' + MailApp.getRemainingDailyQuota());
-  Logger.log('Administradores: ' + CONFIG.ADMINS.join(', '));
-  getClosuresSheet_();
-  Logger.log('Días cerrados: hoja "' + CONFIG.CLOSURES_SHEET_NAME + '" lista · cerrados cada semana: ' + (CONFIG.CLOSED_WEEKDAYS.map(function (n) { return WEEKDAY_NAMES[n]; }).join(', ') || 'ninguno'));
-  Logger.log('Automatizaciones activas: ' + ScriptApp.getProjectTriggers().length + ' (ejecuta instalarAutomatizaciones() para activarlas)');
-  const seatSh = getSeatSheet_();
-  seatSh.getRange(1, 1, 1, SEAT_HEADERS.length).setValues([SEAT_HEADERS]).setFontWeight('bold');
-  seatSh.getRange('N:N').setNumberFormat('@'); // teléfono como texto
-  Logger.log('Lugares de trabajo: ' + CONFIG.SEAT_MAP.seats.length + ' asientos · acceso: ' + (CONFIG.SEAT_RESTRICT ? 'solo ' + CONFIG.SEAT_ALLOWED_DOMAINS.concat(CONFIG.SEAT_ALLOWED_EMAILS).join(', ') : 'cualquier correo verificado'));
-}
-
-/**
- * Ejecútala UNA sola vez (después de publicar esta versión) si ya había reservas de lugares, aunque sean de prueba.
- * Pasa la hoja "Lugares" a la numeración nueva: el lugar que se agregó junto a la ventana (a la derecha) es el 3,
- * el del centro es el 2 y los demás se recorrieron una posición. Si no hay reservas, no hace nada.
- * Se protege sola para no aplicarse dos veces. Si ya habías ejecutado la versión anterior de esta función,
- * solo intercambia el 2 y el 3.
- */
-function renumerarLugares() {
-  const props = PropertiesService.getScriptProperties();
-  if (props.getProperty('SEAT_RENUMBER_V2') === 'hecho') {
-    Logger.log('Ya se había renumerado antes. No se cambió nada.');
-    return;
-  }
-  const yaAplicadaAntes = props.getProperty('SEAT_RENUMBER_V1') === 'hecho';
-  const sh = getSeatSheet_();
-  const last = sh.getLastRow();
-  let total = 0;
-  if (last >= 2) {
-    const range = sh.getRange(2, 7, last - 1, 1);   // columna G = Asiento
-    const nuevos = range.getValues().map(function (r) {
-      const n = Number(r[0]);
-      total++;
-      if (yaAplicadaAntes) {                          // la hoja ya tenía la numeración anterior: solo se intercambian 2 y 3
-        if (n === 2) return [3];
-        if (n === 3) return [2];
-        return [n];
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        colors: {
+          ink:  '#0F1F2E',
+          teal: { DEFAULT: '#0B6E6E', dark: '#085555', soft: '#D8EEEC' }
+        }
       }
-      if (n === 28) return [3];                       // el lugar que se agregó al final (a la derecha) pasa a ser el 3
-      if (n >= 3 && n <= 27) return [n + 1];          // del 3 al 27 se recorren una posición (el 2 se queda como 2)
-      return [n];
-    });
-    range.setValues(nuevos);
-  }
-  props.setProperty('SEAT_RENUMBER_V2', 'hecho');
-  Logger.log('Listo. Reservas renumeradas: ' + total);
-}
-
-/** Opcional: comparte los calendarios (solo lectura) con todo el dominio. Requiere el servicio avanzado Calendar. */
-function compartirCalendarios() {
-  CONFIG.ROOMS.forEach(function (r) {
-    try {
-      Calendar.Acl.insert({ role: 'reader', scope: { type: 'domain', value: CONFIG.DOMAIN } }, r.calendarId);
-      Logger.log('Compartido: ' + r.name);
-    } catch (e) {
-      Logger.log('No se pudo compartir ' + r.name + ': ' + e);
     }
-  });
-}
-
-// ===================== ENDPOINTS =====================
-/** GET público: configuración + horarios ocupados (SIN detalles). */
-function doGet(e) {
-  try {
-    const p = (e && e.parameter) || {};
-    const date = p.date || today_();
-    if (!isDate_(date)) return json_({ ok: false, error: 'Fecha inválida.' });
-    return json_({
-      ok: true,
-      config: publicConfig_(),
-      date: date,
-      bookings: dayBookings_(date).map(function (b) { return view_(b, null); })
-    });
-  } catch (err) {
-    return json_({ ok: false, error: String(err) });
-  }
-}
-
-/** POST (JSON como text/plain). Campo "action": day | requestCode | verifyCode | myBookings | book | cancel | reschedule */
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    switch (data.action || 'book') {
-      case 'day':         return json_(actionDay_(data));
-      case 'requestCode': return json_(actionRequestCode_(data));
-      case 'verifyCode':  return json_(actionVerifyCode_(data));
-      case 'myBookings':  return json_(actionMyBookings_(data));
-      case 'book':        return json_(actionBook_(data));
-      case 'cancel':      return json_(actionCancel_(data));
-      case 'reschedule':  return json_(actionReschedule_(data));
-      case 'seatsDay':    return json_(actionSeatsDay_(data));
-      case 'seatBook':    return json_(actionSeatBook_(data));
-      case 'seatCancel':  return json_(actionSeatCancel_(data));
-      case 'seatMine':    return json_(actionSeatMine_(data));
-      case 'staffDay':    return json_(actionStaffDay_(data));
-      case 'arrivalInfo':    return json_(actionArrivalInfo_(data));
-      case 'arrivalConfirm': return json_(actionArrivalConfirm_(data));
-      case 'arrivalMark':    return json_(actionArrivalMark_(data));
-      case 'closures':    return json_(actionClosures_(data));
-      case 'closureAdd':  return json_(actionClosureAdd_(data));
-      case 'closureRemove': return json_(actionClosureRemove_(data));
-      default:            return json_({ ok: false, error: 'Acción desconocida.' });
-    }
-  } catch (err) {
-    return json_({ ok: false, error: 'Error del servidor: ' + err });
-  }
-}
-
-// ===================== ACCIONES =====================
-function actionDay_(data) {
-  const date = data.date || today_();
-  if (!isDate_(date)) return { ok: false, error: 'Fecha inválida.' };
-
-  const viewer = readToken_(data.token);
-  const res = {
-    ok: true,
-    config: publicConfig_(),
-    date: date,
-    closed: closedInfo_(date, 'salas'),
-    bookings: dayBookings_(date).map(function (b) { return view_(b, viewer); })
   };
-  if (data.token && !viewer) res.sessionExpired = true;
-  if (viewer) res.viewer = { email: viewer.email, admin: viewer.admin, staff: viewer.staff };
-  return res;
-}
+</script>
 
-/** Envía un código de 6 dígitos al correo para verificar que es suyo. */
-function actionRequestCode_(data) {
-  const email = normEmail_(data.email);
-  if (!isEmail_(email)) return { ok: false, error: 'Escribe un correo válido.' };
-
-  const cache = CacheService.getScriptCache();
-  const countKey = 'otpcount_' + email;
-  const sent = parseInt(cache.get(countKey) || '0', 10);
-  if (sent >= 5) return { ok: false, error: 'Demasiados códigos solicitados. Espera una hora e inténtalo de nuevo.' };
-  cache.put(countKey, String(sent + 1), 3600);
-
-  const code = ('000000' + Math.floor(Math.random() * 1000000)).slice(-6);
-  cache.put('otp_' + email, code, 600);
-  cache.remove('otpfail_' + email);
-
-  try {
-    MailApp.sendEmail({
-      to: email,
-      subject: 'Tu código para reservar salas: ' + code,
-      htmlBody:
-        '<div style="font-family:Arial,sans-serif;max-width:420px;color:#0F1F2E">' +
-        '<h2 style="margin:0 0 8px">Tu código de verificación</h2>' +
-        '<p style="font-size:32px;letter-spacing:6px;font-weight:bold;margin:12px 0">' + code + '</p>' +
-        '<p style="color:#5b6b7a;font-size:13px">Vence en 10 minutos. Si no lo pediste, ignora este correo.</p></div>',
-      body: 'Tu código de verificación es ' + code + '. Vence en 10 minutos.',
-      name: 'Reserva de salas',
-      replyTo: CONFIG.ALWAYS_GUEST
-    });
-  } catch (err) {
-    return { ok: false, error: 'No pudimos enviar el correo. Revisa que esté bien escrito.' };
+<style>
+  body { background: #EDF0F3; color: #0F1F2E; }
+  .field {
+    width: 100%; border: 1px solid #cbd5e1; border-radius: .5rem; background: #fff;
+    padding: .625rem .75rem; color: #0F1F2E;
   }
-  return { ok: true, message: 'Te enviamos un código a ' + email + '. Vence en 10 minutos.' };
-}
-
-function actionVerifyCode_(data) {
-  const email = normEmail_(data.email);
-  const code = String(data.code || '').trim();
-  const cache = CacheService.getScriptCache();
-  const failKey = 'otpfail_' + email;
-
-  const fails = parseInt(cache.get(failKey) || '0', 10);
-  if (fails >= 5) {
-    cache.remove('otp_' + email);
-    return { ok: false, error: 'Demasiados intentos. Pide un código nuevo.' };
+  .field:focus-visible { outline: 2px solid #0B6E6E; outline-offset: 0; }
+  /* Línea de tiempo: libre (verde) vs ocupada (rojo rayado) vs tu reserva (azul) */
+  .track {
+    background-color: #E7F5EA;
+    border: 1px solid #BFE0C7;
+    background-image: linear-gradient(to right, rgba(27,127,59,.16) 1px, transparent 1px);
   }
-  const saved = cache.get('otp_' + email);
-  if (!saved) return { ok: false, error: 'El código venció. Pide uno nuevo.' };
-  if (saved !== code) {
-    cache.put(failKey, String(fails + 1), 600);
-    return { ok: false, error: 'Código incorrecto.' };
+  .free-swatch { background-color: #E7F5EA; border: 1px solid #BFE0C7; }
+  .hatch {
+    background-color: #F6D9D9;
+    background-image: repeating-linear-gradient(135deg, rgba(185,28,28,.28) 0 2px, transparent 2px 8px);
+    border-color: #D99A9A;
+    color: #7F1D1D;
   }
-  cache.remove('otp_' + email);
-  cache.remove(failKey);
-  return { ok: true, token: makeToken_(email), email: email, admin: isAdmin_(email), staff: isStaff_(email) };
-}
-
-/** Reservas próximas: las propias, o todas si es admin. */
-function actionMyBookings_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' };
-
-  const days = Math.min(90, Math.max(1, parseInt(data.days, 10) || 30));
-  const from = Utilities.parseDate(today_() + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm');
-  const to = new Date(from.getTime() + days * 24 * 3600 * 1000);
-
-  const list = [];
-  CONFIG.ROOMS.forEach(function (room) {
-    const cal = CalendarApp.getCalendarById(room.calendarId);
-    if (!cal) return;
-    cal.getEvents(from, to).forEach(function (ev) {
-      const b = eventToBooking_(ev, room, null);
-      if (viewer.admin || (b.scheduler && b.scheduler === viewer.email)) list.push(view_(b, viewer));
-    });
-  });
-  list.sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); });
-  return { ok: true, admin: viewer.admin, bookings: list };
-}
-
-/** Crea una reserva (requiere sesión verificada). */
-function actionBook_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { ok: false, authRequired: true, error: 'Verifica tu correo para reservar.' };
-  const email = viewer.email;
-
-  // ---- Validaciones ----
-  const room = roomById_(data.roomId);
-  if (!room) return { ok: false, error: 'La sala seleccionada no existe.' };
-
-  const slot = validateSlot_(data.date, data.start, data.duration);
-  if (slot.error) return { ok: false, error: slot.error };
-  const cl = closedInfo_(data.date, 'salas');
-  if (cl.closed) return { ok: false, closed: true, error: cl.reason };
-
-  const attendees = Math.max(1, parseInt(data.attendees, 10) || 1);
-  if (attendees > room.capacity) {
-    return { ok: false, error: room.name + ' tiene capacidad para ' + room.capacity + ' personas.' };
+  .mine-block { background-color: #DCE6FB; border-color: #4F74D0; color: #1F3A8A; }
+  .mine-card { border-color: #4F74D0; background-color: #F0F4FD; }
+  .toast-in { animation: toast .25s ease-out; }
+  @keyframes toast { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .toast-in, .pulse-dot { animation: none; } }
+  button:focus-visible { outline: 2px solid #0B6E6E; outline-offset: 2px; }
+  /* Pestañas y selector Todo el día / Por horas */
+  .tab-btn { padding: .6rem 1rem; border-radius: .75rem; font-weight: 700; font-size: .9rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+  .tab-btn:hover { border-color: #0B6E6E; }
+  .tab-on { background: #0F1F2E; border-color: #0F1F2E; color: #fff; }
+  .seg-btn { padding: .6rem .75rem; border-radius: .625rem; font-weight: 600; font-size: .875rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
+  .seg-on { background: #D8EEEC; border-color: #0B6E6E; color: #085555; }
+  /* Croquis de lugares */
+  .seat circle { stroke-width: 3; }
+  .seat text { pointer-events: none; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; }
+  .seat-free { cursor: pointer; }
+  .seat-free circle { fill: #E7F5EA; stroke: #4CAF72; }
+  .seat-free text { fill: #166534; }
+  .seat-free:hover circle { fill: #CDEBD4; }
+  .seat-taken { cursor: not-allowed; }
+  .seat-taken circle { fill: url(#seatHatch); stroke: #D99A9A; }
+  .seat-taken text { fill: #7F1D1D; }
+  .seat-mine { cursor: default; }
+  .seat-mine circle { fill: #DCE6FB; stroke: #4F74D0; }
+  .seat-mine text { fill: #1F3A8A; }
+  .seat-selected { cursor: pointer; }
+  .seat-selected circle { fill: #0B6E6E; stroke: #085555; }
+  .seat-selected text { fill: #fff; }
+  @media print {
+    nav[role=tablist], #identityWrap, #toastBox, #roomsView, #seatsView, #officeNote, .no-print { display: none !important; }
+    body { background: #fff; }
+    #todayView section, #todayView .rounded-2xl { box-shadow: none; }
   }
+  /* Pantalla de llegada: solo se ve el botón */
+  .arrival-mode nav[role=tablist], .arrival-mode #identityWrap, .arrival-mode #roomsView, .arrival-mode #seatsView,
+  .arrival-mode #todayView, .arrival-mode #officeNote, .arrival-mode #versionNote, .arrival-mode [aria-live="polite"] { display: none !important; }
+  .seat:focus { outline: none; }
+  .seat:focus-visible circle { stroke: #0F1F2E; stroke-width: 4; }
+</style>
+</head>
 
-  const host = String(data.host || '').trim();
-  if (CONFIG.HOSTS.indexOf(host) < 0) {
-    return { ok: false, error: 'Elige un host válido (' + CONFIG.HOSTS.join(' o ') + ').' };
-  }
-  const purpose = String(data.purpose || '').trim();
-  if ((CONFIG.PURPOSES_BY_HOST[host] || []).indexOf(purpose) < 0) {
-    return { ok: false, error: 'Elige un motivo de la lista para ' + host + '.' };
-  }
+<body class="font-sans antialiased min-h-screen">
 
-  let number = '';
-  if (CONFIG.NUMBER_HOSTS.indexOf(host) >= 0) {
-    number = String(data.number || '').replace(/\D/g, '');
-    if (number.length < 10 || number.length > 15) {
-      return { ok: false, error: 'Escribe el ' + CONFIG.NUMBER_LABEL.toLowerCase() + ' (10 dígitos).' };
-    }
-  }
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
-  const isAgencyHost = CONFIG.AGENCY_HOSTS.indexOf(host) >= 0;
-  let agency = '';
-  if (isAgencyHost) {
-    agency = clean_(data.agency, 80);
-    if (!agency) return { ok: false, error: 'Escribe la ' + CONFIG.AGENCY_LABEL.toLowerCase() + '.' };
-  }
+  <header class="mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div class="flex items-center gap-4 rounded-2xl bg-white border border-slate-200 shadow-sm px-4 py-2.5">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAEmUlEQVR42u2Za0ybVRjHf+/LHZxkyEVBl8qWcZnCuExdFqhAiAvbwgf8MmAOwrJkcVOXJTP7gMaYOI0amGYL6jrEjcQECYlzM1s2KggEUEFhuLEgCDKgoetWoFCu9QPtoLUXoC90MXs+vT09z3l/fc45z/k/p4LBYODhM5GH0h5huQRr+BaaLsmw3J0f4vJbtH6D/j6ATwBb95FR5OyYgjM7cUzFhT3c+dWy/Znt5FThF+wKrLEhvkq2OXEBmzhYj1/Q2q4t3bA9JkDThUKObngNo6UbRiFn+JbjnkGRFNSYx6y+nu8q8PZm32tER0sWrQnNUpnmt6dCzoRmUZNCgUpFby/lFySbxAkNipSlMi2QpZjIDAZEwfjF3Jw0WPNMqvZlLxRVO4oU9FoQBHJyATw8yM6RYG3ptZxNXgnTAwuNJ/863v6gVuPjg5+fs1h6LaVpDLQ4myQXyJxPEFIxAQMtlKYxNeY01tSYZEwLZOmOyUQHTOlSMs1bfxOl6UyPrwhrnqm/ybJ9Xag0ZGU77ZFZx5oet8K05VWOtHOoWZqY9dbZIxOtMpXttBInWRLBW6SczXmyGf3SEsRZOb0/W8qBo7fNWhqKMMyx4xjjak4G4+HLO2MAV45T98ny4MJTyb/mKFrfH7JkWm3rruaHI3ax+pv45QvrKqVQpPFzgNEBCkV+PCYlWdNpSy1phtV63mU1xR/ltrEGW+15zk4DCG4mBTAD4O6DIOD/tLNYg7/bLjEmtfY8Nd0Aj4WQWcLoIKNDAJ5+ZJWtXBw/sHG17WgZ/iOBMoooUJJVBtBWjrYPIPEgT26lo5LxuwCxuQRFG2MJiG4UKClQ8uLhZWBZvNpBQfZUHLJk1LeNZ/apKCJ2ExTN3zWM9FMcQVQmHr7cqCDxAG4e9DUgiMjkVuZFyjpREAFEU0ynJ7hRYSYMW0qNzzUfmEb0Wv3y1TBr1LcZxcTnoe7k6gm6qwHWP8uuU8jkTNyl5kNi9wI0l9BRafQNeY4DtYQmMHyT6nfpvASQfw3Rjc7L1H3sTFUtAARuJnAzQNg2sqv4VMaUjgIl/hsAvNaRWWLs3nkJwSTWw9MW1F/uRc4kMNiKTI7ohuYvJ2Wg6WRqKaXrqhEi7AUidhmZOio5l0rXlUUeJpfJES4eXsjgL71upY9TdxAjd6gqIDCCN28CBGzE09d0AXGUkX6mdGx6xdKrpZTmMwBx+wlLXN4xLy5lEvVagNkp00/xXNjPojuAz/pFHqZJ9H3CylAWfSS+sRlqMz5kfU2Pkrg8K31ichhT4elHWKLjI0QarO7rDPxGaAKyZGTJTOmsaUkdO0wn+swkDcXSYbWW0aNEpwbQ30f5HsA/jRgMnEsl6Thh27jXQ+1HxO8H6GvAMGfs9mcVkZls2I62j8bTqDsBfnofQXCcac1k4GfRyyvkJbSgKN7osLHkBdfdpFq82uyTl7/LsALCbWOFPO8yrJAY21ix2S7Dis+zjSVLJmavC5heLiRgo90sn/klEbvXlClyD/ITS7tIqj1J27eM9DNxb7VofAJ4PIzYbJLeduLabY3t0V9R/wOsfwFIybP7mFEYJQAAAABJRU5ErkJggg==" alt="Tuhabi" class="h-10 w-auto">
+        <span class="h-7 w-px bg-slate-200" aria-hidden="true"></span>
+        <img src="data:image/png;base64,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" alt="Pulppo" class="h-7 w-auto">
+      </div>
+      <div class="flex items-center gap-2 text-sm text-slate-600" aria-live="polite">
+        <span id="liveDot" class="inline-block w-2 h-2 rounded-full bg-slate-400"></span>
+        <span id="liveText">Conectando…</span>
+      </div>
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Reserva de salas</h1>
+    <a href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Paseo+de+la+Reforma+333%2C+Ju%C3%A1rez%2C+Cuauht%C3%A9moc%2C+06500+Ciudad+de+M%C3%A9xico"
+       target="_blank" rel="noopener"
+       class="mt-1 inline-flex items-start gap-1.5 text-sm text-slate-600 hover:text-teal-dark">
+      <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span>Av. P.º de la Reforma 333-Piso 2, Juárez, Cuauhtémoc, 06500 Ciudad de México, CDMX</span>
+    </a>
+  </header>
 
-  const names = (Array.isArray(data.visitors) ? data.visitors : [data.visitor])
-    .map(function (n) { return clean_(n, 80); })
-    .filter(function (n) { return n; })
-    .slice(0, isAgencyHost ? 1 : 2);   // Pulppo: un solo nombre (el broker responsable)
-  if (!names.length) {
-    return { ok: false, error: isAgencyHost ? 'Escribe el ' + CONFIG.BROKER_LABEL.toLowerCase() + '.' : 'Escribe el nombre de la visita.' };
-  }
-  const visitor = names.join(' y ');
+  <div id="configBanner" class="hidden mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    Falta conectar la página: pega la URL de tu Web App en <code>API_URL</code> (al final de este archivo).
+  </div>
 
-  // ---- Sección crítica: evita reservas simultáneas ----
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const cal = CalendarApp.getCalendarById(room.calendarId);
-    if (!cal) return { ok: false, error: 'No se encontró el calendario de ' + room.name + '.' };
+  <nav class="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Secciones">
+    <button type="button" id="tabRooms" role="tab" class="tab-btn tab-on">Salas de reunión</button>
+    <button type="button" id="tabSeats" role="tab" class="tab-btn">Lugares de trabajo <span class="ml-1 rounded-full bg-teal-soft text-teal-dark text-[11px] font-bold px-2 py-0.5">Pulppo</span></button>
+    <button type="button" id="tabToday" role="tab" class="tab-btn hidden">Hoy en la oficina</button>
+  </nav>
 
-    const clash = findClash_(cal, slot.startDate, slot.endDate, null);
-    if (clash) return clashError_(room, clash);
+  <div id="identityWrap" class="mb-6 max-w-xl">
+      <!-- Identidad: correo verificado -->
+      <div id="identity" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div id="idEmail">
+          <label for="email" class="block text-sm font-semibold mb-1.5">Tu correo (quien agenda)</label>
+          <div class="flex gap-2">
+            <input id="email" type="email" maxlength="120" autocomplete="email" placeholder="nombre@empresa.com" class="field min-w-0 flex-1">
+            <button type="button" id="sendCodeBtn"
+                    class="shrink-0 rounded-lg bg-ink hover:bg-slate-700 disabled:opacity-50 text-white text-sm font-semibold px-4">Enviar código</button>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">Te enviamos un código para confirmar que el correo es tuyo. Así solo tú ves los datos de tus reservas.</p>
+        </div>
 
-    const id = Utilities.getUuid().slice(0, 8).toUpperCase();
-    const options = {
-      location: room.name + ' (' + room.floor + ')',
-      description:
-        (agency ? CONFIG.AGENCY_LABEL + ': ' + agency + '\n' + CONFIG.BROKER_LABEL + ': ' + visitor + '\n' : 'Visita: ' + visitor + '\n') +
-        'Motivo: ' + purpose + '\n' +
-        'Host: ' + host + '\n' +
-        (number ? CONFIG.NUMBER_LABEL + ': ' + number + '\n' : '') +
-        'Agenda: ' + email + '\n' +
-        'Asistentes: ' + attendees + '\n' +
-        'Reserva #' + id
-    };
-    const guests = [CONFIG.ALWAYS_GUEST, email].filter(function (g, i, a) { return g && a.indexOf(g) === i; });
-    options.guests = guests.join(',');
-    options.sendInvites = true;
+        <div id="idCode" class="hidden">
+          <label for="code" class="block text-sm font-semibold mb-1.5">Código de 6 dígitos</label>
+          <div class="flex gap-2">
+            <input id="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"
+                   class="field min-w-0 flex-1 tracking-widest">
+            <button type="button" id="verifyBtn"
+                    class="shrink-0 rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 text-white text-sm font-semibold px-4">Verificar</button>
+          </div>
+          <p id="codeHint" class="mt-2 text-xs text-slate-500"></p>
+          <div class="mt-1 flex gap-4 text-xs">
+            <button type="button" id="resendBtn" class="font-semibold text-teal hover:text-teal-dark">Reenviar código</button>
+            <button type="button" id="changeEmailBtn" class="font-semibold text-slate-600 hover:text-ink">Cambiar correo</button>
+          </div>
+        </div>
 
-    const title = purpose + ' · ' + (agency ? agency + ' / ' : '') + visitor + ' (' + host + ')';
-    const ev = cal.createEvent(title, slot.startDate, slot.endDate, options);
-    ev.setTag('bookingId', id);
-    ev.setTag('visitor', visitor);
-    ev.setTag('host', host);
-    ev.setTag('purpose', purpose);
-    ev.setTag('scheduler', email);
-    ev.setTag('attendees', String(attendees));
-    if (number) ev.setTag('number', number);
-    if (agency) ev.setTag('agency', agency);
+        <div id="idDone" class="hidden flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold">
+              Correo verificado
+              <span id="adminBadge" class="hidden ml-1 rounded-full bg-teal-soft text-teal-dark text-xs font-semibold px-2 py-0.5">Administrador</span>
+            </div>
+            <div id="doneEmail" class="text-sm text-slate-600 break-all"></div>
+          </div>
+          <button type="button" id="logoutBtn" class="shrink-0 text-sm font-semibold text-slate-600 hover:text-red-700">Salir</button>
+        </div>
+      </div>
 
-    let logSheet = null, logRow = 0;
-    try {
-      logSheet = getSheet_();
-      logSheet.appendRow([
-        id, fmt_(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-        data.date, data.start, slot.endStr, slot.duration, room.name,
-        host, visitor, purpose, attendees, email, ev.getId(), number, '', 'Confirmada', agency
-      ]);
-      logRow = logSheet.getLastRow();
-    } catch (err) { Logger.log('Error en Sheets: ' + err); }
+    <p id="idError" class="hidden mt-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+  </div>
 
-    const info = {
-      id: id, room: room, date: data.date, start: data.start, end: slot.endStr,
-      duration: slot.duration, host: host, visitor: visitor, purpose: purpose,
-      attendees: attendees, scheduler: email, number: number, agency: agency
-    };
-    const chatStatus = notifyChat_('new', info, null);
-    if (logRow) {
-      try { logSheet.getRange(logRow, COL_CHAT).setValue(chatStatus); } catch (x) { Logger.log('No se pudo anotar el estado de Chat: ' + x); }
-    }
-    if (CONFIG.SEND_CONFIRMATION_EMAIL) sendBookingEmail_('new', info, null);
+  <div id="roomsView">
+  <div id="roomsClosedBanner" class="hidden mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="status"></div>
+  <div class="grid lg:grid-cols-5 gap-6 items-start">
 
-    CacheService.getScriptCache().remove('day_' + data.date);
+    <!-- ============ FORMULARIO ============ -->
+    <form id="bookingForm" class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5" novalidate>
 
-    return {
-      ok: true,
-      id: id,
-      message: 'Reserva confirmada: ' + room.name + ', ' + data.date + ' de ' + data.start + ' a ' + slot.endStr + '.',
-      chat: viewer.admin ? chatStatus : undefined   // solo los administradores ven si falló el aviso
-    };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
+      <div id="editBanner" class="hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div id="editText" class="font-semibold"></div>
+        <button type="button" id="cancelEditBtn" class="mt-1 text-xs font-semibold underline">Cancelar el cambio y volver a reservar</button>
+      </div>
+
+      <div class="grid grid-cols-6 gap-4">
+        <div class="col-span-6 sm:col-span-3">
+          <label for="date" class="block text-sm font-semibold mb-1.5">Fecha</label>
+          <input id="date" type="date" required class="field">
+        </div>
+        <div class="col-span-3">
+          <label for="start" class="block text-sm font-semibold mb-1.5">Hora de inicio</label>
+          <select id="start" required class="field"></select>
+        </div>
+        <div class="col-span-3">
+          <label for="duration" class="block text-sm font-semibold mb-1.5">Duración</label>
+          <select id="duration" required class="field"></select>
+        </div>
+        <div class="col-span-3">
+          <label for="attendees" class="block text-sm font-semibold mb-1.5">Asistentes</label>
+          <input id="attendees" type="number" min="1" max="60" value="2" class="field">
+        </div>
+        <p id="endHint" class="col-span-6 -mt-2 text-sm text-slate-500"></p>
+      </div>
+
+      <fieldset>
+        <legend class="flex items-baseline justify-between w-full text-sm font-semibold mb-2">
+          <span>Sala</span>
+          <span id="freeCount" class="font-normal text-slate-500"></span>
+        </legend>
+        <div id="roomList" class="grid grid-cols-2 gap-2"></div>
+      </fieldset>
+
+      <div id="detailsBox" class="space-y-4">
+        <div>
+          <label for="host" class="block text-sm font-semibold mb-1.5">Host</label>
+          <select id="host" required class="field"></select>
+        </div>
+
+        <div id="agencyBox" class="hidden">
+          <label for="agency" id="agencyLabel" class="block text-sm font-semibold mb-1.5">Inmobiliaria</label>
+          <input id="agency" type="text" maxlength="80" autocomplete="off" placeholder="Nombre de la inmobiliaria" class="field">
+        </div>
+
+        <div>
+          <label for="visitor1" id="visitorLabel" class="block text-sm font-semibold mb-1.5">Nombre de la visita</label>
+          <input id="visitor1" type="text" maxlength="80" required placeholder="Nombre y apellido" class="field">
+          <div id="visitor2Box" class="hidden mt-2 flex items-center gap-2">
+            <input id="visitor2" type="text" maxlength="80" placeholder="Nombre de la segunda visita" class="field min-w-0 flex-1">
+            <button type="button" id="removeVisitor2" class="shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-500 hover:text-red-700">Quitar</button>
+          </div>
+          <button type="button" id="addVisitor2" class="mt-2 rounded text-sm font-semibold text-teal hover:text-teal-dark">+ Agregar segunda visita</button>
+        </div>
+
+        <div id="numberBox" class="hidden">
+          <label for="number" id="numberLabel" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp del broker</label>
+          <input id="number" type="tel" inputmode="tel" maxlength="25" autocomplete="off" placeholder="10 dígitos, solo números" class="field">
+        </div>
+
+        <div>
+          <label for="purpose" class="block text-sm font-semibold mb-1.5">Motivo de la reunión</label>
+          <select id="purpose" required class="field"></select>
+        </div>
+      </div>
+
+      <p id="formError" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+
+      <button id="submitBtn" type="submit"
+              class="w-full rounded-xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 transition-colors">
+        Reservar sala
+      </button>
+    </form>
+
+    <!-- ============ DISPONIBILIDAD ============ -->
+    <section class="lg:col-span-3 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200" aria-labelledby="dayTitle">
+      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-5">
+        <h2 id="dayTitle" class="text-lg font-bold capitalize">Disponibilidad</h2>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm free-swatch"></span>Libre</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm hatch border"></span>Ocupada</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm mine-block border"></span>Tu reserva</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm bg-teal"></span>Tu selección</span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto pb-1">
+        <div class="min-w-[640px]">
+          <div class="flex">
+            <div class="w-40 shrink-0"></div>
+            <div id="hourAxis" class="relative flex-1 h-5 text-xs text-slate-500"></div>
+          </div>
+          <div id="timeline" class="mt-1 space-y-2"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-5 border-t border-slate-200">
+        <h3 id="dayListTitle" class="text-sm font-semibold mb-3">Reservas del día</h3>
+        <div id="dayItems" class="space-y-2"></div>
+      </div>
+
+      <div id="mineBox" class="hidden mt-6 pt-5 border-t border-slate-200">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <h3 id="mineTitle" class="text-sm font-semibold">Mis reservas</h3>
+          <button type="button" id="refreshMine" class="text-xs font-semibold text-teal hover:text-teal-dark">Actualizar</button>
+        </div>
+        <div id="mineItems" class="space-y-2"></div>
+      </div>
+    </section>
+
+  </div>
+  </div><!-- /roomsView -->
+
+  <!-- ============ LUGARES DE TRABAJO (equipo Pulppo) ============ -->
+  <div id="seatsView" class="hidden">
+    <div id="seatsClosedBanner" class="hidden mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="status"></div>
+    <div id="seatsGate" class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 text-sm text-slate-700"></div>
+
+    <div id="seatsApp" class="hidden grid lg:grid-cols-5 gap-6 items-start">
+      <div class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5">
+        <div>
+          <label for="seatDate" class="block text-sm font-semibold mb-1.5">Fecha</label>
+          <input id="seatDate" type="date" class="field">
+        </div>
+
+        <div>
+          <div class="block text-sm font-semibold mb-1.5">¿Cuánto tiempo?</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="seatModeDay" class="seg-btn seg-on">Todo el día</button>
+            <button type="button" id="seatModeHours" class="seg-btn">Por horas</button>
+          </div>
+          <div id="seatHoursBox" class="hidden mt-3 grid grid-cols-2 gap-4">
+            <div>
+              <label for="seatStart" class="block text-sm font-semibold mb-1.5">Desde</label>
+              <select id="seatStart" class="field"></select>
+            </div>
+            <div>
+              <label for="seatEnd" class="block text-sm font-semibold mb-1.5">Hasta</label>
+              <select id="seatEnd" class="field"></select>
+            </div>
+          </div>
+          <p id="seatAllDayNote" class="mt-2 text-xs text-slate-500">Todo el día es de 7:00 a 20:00.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label for="seatName" class="block text-sm font-semibold mb-1.5">Tu nombre</label>
+            <input id="seatName" type="text" maxlength="80" autocomplete="name" placeholder="Nombre y apellido" class="field">
+          </div>
+          <div>
+            <label for="seatAgency" class="block text-sm font-semibold mb-1.5">Inmobiliaria</label>
+            <input id="seatAgency" type="text" maxlength="80" autocomplete="organization" placeholder="Tu inmobiliaria" class="field">
+          </div>
+        </div>
+
+        <div>
+          <label for="seatPhone" class="block text-sm font-semibold mb-1.5">Teléfono o WhatsApp</label>
+          <input id="seatPhone" type="tel" inputmode="tel" maxlength="25" autocomplete="tel" placeholder="10 dígitos, solo números" class="field">
+        </div>
+
+        <div class="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm">
+          <div class="text-xs font-semibold text-slate-500 mb-0.5">Tu lugar</div>
+          <div id="seatPick">Toca un lugar libre en el croquis.</div>
+        </div>
+
+        <p id="seatError" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+
+        <button type="button" id="seatSubmit" disabled
+                class="w-full rounded-xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 transition-colors">
+          Reservar lugar
+        </button>
+      </div>
+
+      <section class="lg:col-span-3 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200" aria-labelledby="seatMapTitle">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-4">
+          <h2 id="seatMapTitle" class="text-lg font-bold">Croquis de la oficina <span id="seatFree" class="ml-1 text-sm font-normal text-slate-500"></span></h2>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full free-swatch"></span>Libre</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full hatch border"></span>Ocupado</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full mine-block border"></span>Tuyo</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full bg-teal"></span>Tu selección</span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <div id="seatMapBox" class="min-w-[640px]"></div>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">Vista desde arriba: la ventana está arriba y la pared de la izquierda a la izquierda.</p>
+      </section>
+    </div>
+
+    <section id="seatMineBox" class="hidden mt-6 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h3 id="seatMineTitle" class="text-sm font-semibold">Mis lugares reservados</h3>
+        <button type="button" id="seatRefreshMine" class="text-xs font-semibold text-teal hover:text-teal-dark">Actualizar</button>
+      </div>
+      <div id="seatMineItems" class="space-y-2"></div>
+    </section>
+  </div>
+
+  <!-- ============ HOY EN LA OFICINA (recepción y administradores) ============ -->
+  <div id="todayView" class="hidden">
+    <div id="todayGate" class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 text-sm text-slate-700"></div>
+
+    <div id="todayApp" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label for="todayDate" class="block text-sm font-semibold mb-1.5">Fecha</label>
+            <input id="todayDate" type="date" class="field">
+          </div>
+          <div class="flex gap-2 no-print">
+            <button type="button" id="todayPrev" class="seg-btn" aria-label="Día anterior">←</button>
+            <button type="button" id="todayNow" class="seg-btn">Hoy</button>
+            <button type="button" id="todayNext" class="seg-btn" aria-label="Día siguiente">→</button>
+          </div>
+          <button type="button" id="todayPrint" class="seg-btn no-print sm:ml-auto">Imprimir</button>
+        </div>
+        <h2 id="todayTitle" class="mt-4 text-lg font-bold capitalize"></h2>
+        <div id="todayChips" class="mt-2 flex flex-wrap gap-2 text-sm"></div>
+      </div>
+
+      <div id="todayClosed" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800"></div>
+
+      <section class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <h3 class="text-sm font-semibold mb-3">Visitas del día</h3>
+        <div id="todayRooms" class="space-y-2"></div>
+      </section>
+
+      <section class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
+        <h3 class="text-sm font-semibold mb-3">Lugares de trabajo reservados</h3>
+        <div id="todaySeats" class="space-y-2"></div>
+      </section>
+
+      <section id="closuresBox" class="hidden bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 no-print">
+        <h3 class="text-sm font-semibold mb-1">Días cerrados</h3>
+        <p id="closuresWeekly" class="text-xs text-slate-500 mb-4"></p>
+        <div class="grid sm:grid-cols-4 gap-3 items-end">
+          <div>
+            <label for="closeDate" class="block text-sm font-semibold mb-1.5">Fecha</label>
+            <input id="closeDate" type="date" class="field">
+          </div>
+          <div class="sm:col-span-2">
+            <label for="closeReason" class="block text-sm font-semibold mb-1.5">Motivo</label>
+            <input id="closeReason" type="text" maxlength="120" placeholder="Ej. Día festivo" class="field">
+          </div>
+          <div>
+            <label for="closeScope" class="block text-sm font-semibold mb-1.5">Aplica a</label>
+            <select id="closeScope" class="field">
+              <option value="todo">Todo</option>
+              <option value="salas">Solo salas</option>
+              <option value="lugares">Solo lugares</option>
+            </select>
+          </div>
+        </div>
+        <p id="closeMsg" class="hidden mt-3 text-sm rounded-lg px-3 py-2"></p>
+        <button type="button" id="closeAddBtn" class="mt-3 rounded-lg bg-ink hover:bg-slate-700 text-white text-sm font-semibold px-4 py-2.5">Cerrar este día</button>
+        <div id="closuresList" class="mt-4 space-y-2"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ LLEGADA: la visita abre su enlace en el celular ============ -->
+  <div id="arrivalView" class="hidden mx-auto max-w-md">
+    <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 text-center">
+      <p id="arrivalOffice" class="text-sm font-semibold text-slate-500"></p>
+      <h2 id="arrivalTitle" class="mt-1 text-2xl font-extrabold">Un momento…</h2>
+      <p id="arrivalDetail" class="mt-3 text-slate-600"></p>
+      <p id="arrivalMsg" class="hidden mt-5 rounded-xl px-4 py-3 text-sm font-semibold"></p>
+      <button type="button" id="arrivalBtn" class="hidden mt-6 w-full rounded-2xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-lg font-bold py-4">Ya llegué a la oficina</button>
+      <p id="arrivalHint" class="hidden mt-4 text-xs text-slate-500">Al tocar el botón avisamos a recepción para que bajen por ti.</p>
+      <p id="arrivalAddr" class="mt-5 text-xs text-slate-500"></p>
+    </div>
+  </div>
+
+  <p id="officeNote" class="mt-10 text-center text-sm font-semibold text-slate-600">Horario de trabajo de la oficina: lunes a viernes de 7:00 a 20:00 h · sábados de 9:00 a 15:00 h · domingos cerrado.</p>
+  <p id="versionNote" class="mt-1 text-center text-xs text-slate-400">Página: versión l · Script: comprobando…</p>
+</div>
+
+<div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
+
+<script>
+/* ========================================================
+ *  CONFIGURACIÓN: URL de tu Web App (termina en /exec)
+ * ======================================================== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbz4rpGvTyyCu27jUjzaA2zGhJSMsbtOSHVcwuXBaJEm_7dO2yaLkobpqofOQESbllbMQg/exec';
+const CONFIGURED = !!API_URL && !API_URL.startsWith('PEGA_AQUI');
+
+/* ---------------- Estado ---------------- */
+const $ = (id) => document.getElementById(id);
+let cfg = null;            // configuración del servidor
+let bookings = [];         // reservas del día (con o sin detalle, según quién mira)
+let selectedRoom = null;
+let loadedAt = Date.now();
+let submitting = false;
+let session = null;        // { token, email, admin }
+let codeStep = false;      // ¿está escribiendo el código?
+let pendingEmail = '';
+let mine = null;           // { bookings } | null (cargando)
+let editing = null;        // reserva que se está reagendando { id, roomId, date, ... }
+let busyAct = false;       // evita doble clic al cancelar
+let tab = 'rooms';         // pestaña activa: rooms | seats
+let seatBookings = [];     // reservas de lugar del día (según quién mira)
+let seatsAllowed = null;   // null = sin saber, true/false = permiso del equipo Pulppo
+let seatGateMsg = '';
+let selectedSeat = null;
+let seatMode = 'day';      // day | hours
+let seatMine = null;       // { bookings } | null
+let roomsClosed = null;    // { closed, reason } del día elegido (salas)
+let seatsClosed = null;    // { closed, reason } del día elegido (lugares)
+let todayData = null;      // datos de "Hoy en la oficina"
+let todayForbidden = '';
+let closures = null;       // días cerrados (solo administradores)
+
+/* ---------------- Utilidades ---------------- */
+const pad = (n) => String(n).padStart(2, '0');
+const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+const fromMin = (m) => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const roomName = (id) => ((cfg && cfg.rooms.find((r) => r.id === id)) || {}).name || id;
+const nowMinutes = () => toMin(cfg.nowTime) + Math.floor((Date.now() - loadedAt) / 60000);
+
+function prettyDate(iso, withYear) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('es-MX', withYear
+    ? { weekday: 'short', day: 'numeric', month: 'short' }
+    : { weekday: 'long', day: 'numeric', month: 'long' });
 }
-
-/** Cancela una reserva: la borra del calendario de la sala (quien agendó o un admin). */
-function actionCancel_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' };
-
-  const found = findManagedEvent_(data.roomId, data.date, data.id);
-  if (!found) return { ok: false, error: 'No encontramos esa reserva. Puede que ya se haya cancelado.' };
-
-  const old = eventToBooking_(found.ev, found.room, data.date);
-  if (!viewer.admin && old.scheduler !== viewer.email) {
-    return { ok: false, error: 'Solo quien agendó la visita puede cancelarla.' };
-  }
-  if (isPast_(old.date, old.end)) return { ok: false, error: 'Esa visita ya terminó y no se puede cancelar.' };
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    found.ev.deleteEvent();
-    updateLog_(old.id, (function () { const c = {}; c[COL_STATUS] = 'Cancelada'; return c; })());
-
-    const b = bookingInfo_(old, found.room);
-    const by = viewer.email !== old.scheduler ? viewer.email : '';
-    const chatStatus = notifyChat_('cancel', b, { by: by });
-    if (CONFIG.SEND_CONFIRMATION_EMAIL && old.scheduler) sendBookingEmail_('cancel', b, { by: by });
-
-    CacheService.getScriptCache().remove('day_' + old.date);
-    return {
-      ok: true,
-      message: 'Reserva cancelada: ' + found.room.name + ', ' + old.date + ' de ' + old.start + ' a ' + old.end + '.',
-      chat: viewer.admin ? chatStatus : undefined
-    };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
-}
-
-/** Reagenda una reserva: nueva fecha, hora, duración y/o sala. */
-function actionReschedule_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' };
-
-  const found = findManagedEvent_(data.roomId, data.date, data.id);
-  if (!found) return { ok: false, error: 'No encontramos esa reserva. Puede que ya se haya cancelado.' };
-
-  const old = eventToBooking_(found.ev, found.room, data.date);
-  if (!viewer.admin && old.scheduler !== viewer.email) {
-    return { ok: false, error: 'Solo quien agendó la visita puede reagendarla.' };
-  }
-  if (isPast_(old.date, old.end)) return { ok: false, error: 'Esa visita ya terminó y no se puede cambiar.' };
-
-  const newRoom = roomById_(data.newRoomId || data.roomId);
-  if (!newRoom) return { ok: false, error: 'La sala seleccionada no existe.' };
-
-  const slot = validateSlot_(data.newDate, data.newStart, data.newDuration);
-  if (slot.error) return { ok: false, error: slot.error };
-  const cl = closedInfo_(data.newDate, 'salas');
-  if (cl.closed) return { ok: false, closed: true, error: cl.reason };
-
-  if (old.attendees && old.attendees > newRoom.capacity) {
-    return { ok: false, error: newRoom.name + ' tiene capacidad para ' + newRoom.capacity + ' personas y esta visita es de ' + old.attendees + '.' };
-  }
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const newCal = CalendarApp.getCalendarById(newRoom.calendarId);
-    if (!newCal) return { ok: false, error: 'No se encontró el calendario de ' + newRoom.name + '.' };
-
-    const myId = found.ev.getId();
-    const clash = findClash_(newCal, slot.startDate, slot.endDate, myId);
-    if (clash) return clashError_(newRoom, clash);
-
-    let eventId = myId;
-    if (newRoom.id === found.room.id) {
-      found.ev.setTime(slot.startDate, slot.endDate);
-    } else {
-      // Otra sala = otro calendario: se crea el evento nuevo y se borra el anterior
-      const guests = found.ev.getGuestList().map(function (g) { return g.getEmail(); }).join(',');
-      const options = {
-        location: newRoom.name + ' (' + newRoom.floor + ')',
-        description: found.ev.getDescription()
-      };
-      if (guests) { options.guests = guests; options.sendInvites = true; }
-      const created = newCal.createEvent(found.ev.getTitle(), slot.startDate, slot.endDate, options);
-      ['bookingId', 'visitor', 'host', 'purpose', 'scheduler', 'number', 'attendees', 'agency'].forEach(function (k) {
-        const v = found.ev.getTag(k);
-        if (v) created.setTag(k, v);
-      });
-      found.ev.deleteEvent();
-      eventId = created.getId();
-    }
-
-    const cols = {};
-    cols[COL_DATE] = data.newDate;
-    cols[COL_START] = data.newStart;
-    cols[COL_END] = slot.endStr;
-    cols[COL_DUR] = slot.duration;
-    cols[COL_ROOM] = newRoom.name;
-    cols[COL_EVENT] = eventId;
-    cols[COL_STATUS] = 'Reagendada';
-    updateLog_(old.id, cols);
-
-    const b = {
-      id: old.id, room: newRoom, date: data.newDate, start: data.newStart, end: slot.endStr,
-      duration: slot.duration, host: old.host, visitor: old.visitor, purpose: old.purpose,
-      number: old.number, scheduler: old.scheduler, attendees: old.attendees, agency: old.agency
-    };
-    const extra = {
-      before: found.room.name + ', ' + old.date + ' ' + old.start + '–' + old.end,
-      by: viewer.email !== old.scheduler ? viewer.email : ''
-    };
-    const chatStatus = notifyChat_('resched', b, extra);
-    if (CONFIG.SEND_CONFIRMATION_EMAIL && old.scheduler) sendBookingEmail_('resched', b, extra);
-
-    const cache = CacheService.getScriptCache();
-    cache.remove('day_' + old.date);
-    cache.remove('day_' + data.newDate);
-
-    return {
-      ok: true,
-      message: 'Reserva actualizada: ' + newRoom.name + ', ' + data.newDate + ' de ' + data.newStart + ' a ' + slot.endStr + '.',
-      chat: viewer.admin ? chatStatus : undefined
-    };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
-}
-
-// ===================== LUGARES DE TRABAJO (equipo Pulppo) =====================
-const SEAT_HEADERS = ['ID', 'Creado', 'Fecha', 'Inicio', 'Fin', 'Todo el día', 'Asiento', 'Zona', 'Email', 'Nombre', 'Estado', 'Inmobiliaria', 'Aviso Chat', 'Teléfono / WhatsApp'];
-const SEAT_COL_STATUS = 11, SEAT_COL_CHAT = 13;
-
-function seatAllowed_(email) {
-  if (!CONFIG.SEAT_RESTRICT) return true;   // cualquier correo verificado
-  if (isAdmin_(email)) return true;
-  const e = String(email || '').toLowerCase();
-  const domain = e.split('@')[1] || '';
-  const lower = function (x) { return String(x).toLowerCase(); };
-  return CONFIG.SEAT_ALLOWED_EMAILS.map(lower).indexOf(e) >= 0 || CONFIG.SEAT_ALLOWED_DOMAINS.map(lower).indexOf(domain) >= 0;
-}
-
-/** Verifica sesión y permiso. Devuelve { viewer } o { fail } con la respuesta de error. */
-function seatGate_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { fail: { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' } };
-  if (!seatAllowed_(viewer.email)) {
-    return { fail: { ok: false, forbidden: true, error: 'Esta sección es solo para brokers autorizados de Pulppo. El correo ' + viewer.email + ' no está autorizado. Si crees que es un error, escribe a ' + CONFIG.ALWAYS_GUEST + '.' } };
-  }
-  return { viewer: viewer };
-}
-
-function seatById_(n) {
-  return CONFIG.SEAT_MAP.seats.filter(function (s) { return s.n === Number(n); })[0];
-}
-
-function getSeatSheet_() {
-  const ss = getSpreadsheet_();
-  let sh = ss.getSheetByName(CONFIG.SEAT_SHEET_NAME);
-  if (!sh) sh = ss.insertSheet(CONFIG.SEAT_SHEET_NAME);
-  if (sh.getLastRow() === 0) {
-    sh.getRange(1, 1, 1, SEAT_HEADERS.length).setValues([SEAT_HEADERS]).setFontWeight('bold');
-    sh.setFrozenRows(1);
-    sh.getRange('C:E').setNumberFormat('@'); // fecha y horas como texto
-    sh.getRange('N:N').setNumberFormat('@'); // teléfono como texto
-  }
-  return sh;
-}
-
-function cellDate_(v) { return v instanceof Date ? fmt_(v, 'yyyy-MM-dd') : String(v); }
-function cellTime_(v) { return v instanceof Date ? fmt_(v, 'HH:mm') : String(v); }
-
-/** Reservas de lugar vigentes (no canceladas). */
-function readSeatRows_() {
-  const sh = getSeatSheet_();
-  const last = sh.getLastRow();
-  if (last < 2) return [];
-  const vals = sh.getRange(2, 1, last - 1, SEAT_HEADERS.length).getValues();
-  const out = [];
-  vals.forEach(function (r, i) {
-    if (String(r[SEAT_COL_STATUS - 1]) === 'Cancelada') return;
-    out.push({
-      row: i + 2, id: String(r[0]), date: cellDate_(r[2]), start: cellTime_(r[3]), end: cellTime_(r[4]),
-      allDay: String(r[5]) === 'Sí', seat: Number(r[6]), zone: (seatById_(r[6]) || {}).zone || String(r[7]),
-      email: String(r[8]).toLowerCase(), name: String(r[9]), agency: String(r[11] || ''), phone: String(r[13] || '')
-    });
-  });
-  return out;
-}
-
-function overlapsMin_(s1, e1, s2, e2) { return s1 < e2 && e1 > s2; }
-
-/** Lo que ve cada quien: los demás solo ven que el lugar está ocupado. */
-function seatView_(b, viewer) {
-  const mine = b.email === viewer.email;
-  if (mine || viewer.admin || viewer.staff) {
-    return {
-      id: b.id, seat: b.seat, zone: b.zone, date: b.date, start: b.start, end: b.end, allDay: b.allDay,
-      name: b.name, agency: b.agency, phone: b.phone, email: viewer.admin ? b.email : '', mine: mine, detail: true,
-      editable: (viewer.admin || mine) && !isPast_(b.date, b.end)
-    };
-  }
-  return { seat: b.seat, date: b.date, start: b.start, end: b.end, allDay: b.allDay, detail: false };
-}
-
-function seatHours_(b) {
-  return b.allDay ? 'Todo el día (' + b.start + ' – ' + b.end + ')' : b.start + ' – ' + b.end;
-}
-
-function seatChatText_(kind, b, extra) {
-  const head = kind === 'cancel' ? '❌ *Lugar de trabajo cancelado*' : '🪑 *Lugar de trabajo reservado*';
-  let t = head + '\n' +
-    '👤 *Broker:* ' + b.name + '\n' +
-    '🏘️ *Inmobiliaria:* ' + b.agency + '\n' +
-    '✉️ *Correo:* ' + b.email + '\n' +
-    (b.phone ? '📞 *Teléfono:* ' + b.phone + '\n' : '') +
-    '📍 *Lugar:* ' + b.seat + ' · ' + b.zone + '\n' +
-    '🗓️ *Fecha:* ' + b.date + '\n' +
-    '⏰ *Horario:* ' + seatHours_(b) + '\n' +
-    '🔖 Reserva #' + b.id;
-  if (extra && extra.by) t += '\n👮 *Lo hizo:* ' + extra.by;
-  return t;
-}
-
-/** Avisa al espacio de Chat. kind: new | cancel. Devuelve 'OK' o el motivo del fallo. */
-function notifySeat_(kind, b, extra) {
-  const r = postToChat_(seatChatText_(kind, b, extra), CONFIG.SEAT_WEBHOOK_URL);
-  if (!r.ok) Logger.log('Aviso de lugar a Google Chat FALLÓ → ' + r.status);
-  return r.status;
-}
-
-/** Correo a quien reservó el lugar. kind: new | cancel */
-function sendSeatEmail_(kind, b, extra) {
-  try {
-    const title = kind === 'cancel' ? 'Lugar de trabajo cancelado' : 'Reservaste un lugar de trabajo';
-    const intro = kind === 'cancel' ? 'Esta reserva fue cancelada:' : 'Tu lugar quedó confirmado. Estos son los datos:';
-    const rows = [
-      ['Lugar', b.seat + ' · ' + b.zone],
-      ['Fecha', spanishDate_(b.date)],
-      ['Horario', seatHours_(b)],
-      ['Broker', b.name],
-      ['Inmobiliaria', b.agency]
-    ];
-    if (b.phone) rows.push(['Teléfono', b.phone]);
-    if (extra && extra.by) rows.push(['Cancelada por', extra.by]);
-    if (kind !== 'cancel') rows.push(['Dirección', CONFIG.OFFICE_NAME + ' · ' + CONFIG.OFFICE_ADDRESS]);
-    rows.push(['Reserva', '#' + b.id]);
-
-    const link = CONFIG.PAGE_URL + '#lugares';
-    const footer = 'Para cancelar o hacer un cambio entra a ' + link + ' (pestaña Lugares de trabajo) o escribe a ' + CONFIG.ALWAYS_GUEST + '.';
-    const gcal = kind === 'cancel' ? '' : gcalLink_('Lugar de trabajo ' + b.seat + ' · ' + CONFIG.OFFICE_NAME, b.date, b.start, b.end, 'Lugar ' + b.seat + ' (' + b.zone + ')');
-    const calHtml = gcal ? '<p style="margin:16px 0 0"><a href="' + escHtml_(gcal) + '" style="color:#0B6E6E;font-weight:bold">Agregar a mi Google Calendar</a></p>' : '';
-    const calText = gcal ? '\n\nAgregar a mi Google Calendar: ' + gcal : '';
-    const html =
-      '<div style="font-family:Arial,sans-serif;max-width:480px;color:#0F1F2E">' +
-      '<h2 style="margin:0 0 8px">' + escHtml_(title) + '</h2>' +
-      '<p style="margin:0 0 16px">' + escHtml_(intro) + '</p>' +
-      '<table style="border-collapse:collapse;width:100%">' +
-      rows.map(function (r) {
-        return '<tr><td style="padding:6px 12px 6px 0;color:#5b6b7a;vertical-align:top">' + escHtml_(r[0]) +
-               '</td><td style="padding:6px 0;font-weight:bold">' + escHtml_(r[1]) + '</td></tr>';
-      }).join('') +
-      '</table>' + calHtml +
-      '<p style="margin:16px 0 0;color:#5b6b7a;font-size:13px">' + escHtml_(footer) + '</p></div>';
-    const text = title + '\n\n' + intro + '\n\n' + rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') + '\n\n' + footer + calText;
-
-    MailApp.sendEmail({
-      to: b.email,
-      subject: (kind === 'cancel' ? 'Lugar cancelado: ' : 'Lugar reservado: ') + 'lugar ' + b.seat + ' · ' + b.date,
-      htmlBody: html,
-      body: text,
-      name: 'Reserva de lugares',
-      replyTo: CONFIG.ALWAYS_GUEST
-    });
-  } catch (err) {
-    Logger.log('Error enviando correo de lugar (' + kind + '): ' + err);
-  }
-}
-
-function actionSeatsDay_(data) {
-  const g = seatGate_(data);
-  if (g.fail) return g.fail;
-  const date = data.date || today_();
-  if (!isDate_(date)) return { ok: false, error: 'Fecha inválida.' };
-  const list = readSeatRows_().filter(function (b) { return b.date === date; });
-  return { ok: true, date: date, closed: closedInfo_(date, 'lugares'), bookings: list.map(function (b) { return seatView_(b, g.viewer); }) };
-}
-
-function actionSeatMine_(data) {
-  const g = seatGate_(data);
-  if (g.fail) return g.fail;
-  const from = today_();
-  const list = readSeatRows_().filter(function (b) {
-    return b.date >= from && !isPast_(b.date, b.end) && (g.viewer.admin || b.email === g.viewer.email);
-  });
-  list.sort(function (a, b) { return (a.date + a.start).localeCompare(b.date + b.start); });
-  return { ok: true, admin: g.viewer.admin, bookings: list.map(function (b) { return seatView_(b, g.viewer); }) };
-}
-
-function actionSeatBook_(data) {
-  const g = seatGate_(data);
-  if (g.fail) return g.fail;
-  const email = g.viewer.email;
-
-  const seat = seatById_(data.seat);
-  if (!seat) return { ok: false, error: 'Ese lugar no existe.' };
-  const name = clean_(data.name, 80);
-  const agency = clean_(data.agency, 80);
-  if (!name) return { ok: false, error: 'Escribe tu nombre.' };
-  if (!agency) return { ok: false, error: 'Escribe el nombre de tu inmobiliaria.' };
-  const phone = String(data.phone || '').replace(/\D/g, '');
-  if (phone.length < 10 || phone.length > 15) return { ok: false, error: 'Escribe tu teléfono o WhatsApp (10 dígitos).' };
-  if (!isDate_(data.date)) return { ok: false, error: 'Fecha inválida.' };
-
-  const clSeat = closedInfo_(data.date, 'lugares');
-  if (clSeat.closed) return { ok: false, closed: true, error: clSeat.reason };
-
-  const dayMs = 24 * 3600 * 1000;
-  const base = Utilities.parseDate(today_() + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm').getTime();
-  const target = Utilities.parseDate(data.date + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm').getTime();
-  const diff = Math.round((target - base) / dayMs);
-  if (diff < 0) return { ok: false, error: 'No puedes reservar un día que ya pasó.' };
-  if (diff > CONFIG.SEAT_MAX_DAYS_AHEAD) return { ok: false, error: 'Solo se puede reservar con hasta ' + CONFIG.SEAT_MAX_DAYS_AHEAD + ' días de anticipación.' };
-
-  const hrs = hoursFor_(data.date, 'seats');
-  const allDay = !!data.allDay;
-  let start, end;
-  if (allDay) {
-    start = fromMin_(hrs.open * 60);
-    end = fromMin_(hrs.close * 60);
-  } else {
-    if (!isTime_(data.start) || !(isTime_(data.end) || data.end === '24:00')) return { ok: false, error: 'Elige la hora de inicio y de fin.' };
-    start = data.start; end = data.end;
-    const s0 = toMin_(start), e0 = toMin_(end), step = CONFIG.SEAT_STEP_MINUTES;
-    if (e0 <= s0) return { ok: false, error: 'La hora de fin debe ser después de la de inicio.' };
-    if (s0 < hrs.open * 60 || e0 > hrs.close * 60) {
-      return { ok: false, error: 'Los lugares se reservan entre las ' + hrs.open + ':00 y las ' + hrs.close + ':00' + (CONFIG.WEEKDAY_HOURS[weekdayOf_(data.date)] ? ' (horario especial de ese día).' : '.') };
-    }
-    if (s0 % step !== 0 || e0 % step !== 0) return { ok: false, error: 'Elige horas en bloques de ' + step + ' minutos.' };
-  }
-  if (isPast_(data.date, end)) return { ok: false, error: 'Ese horario ya pasó.' };
-
-  const s = toMin_(start), e = toMin_(end);
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const rows = readSeatRows_().filter(function (b) { return b.date === data.date; });
-
-    const taken = rows.filter(function (b) { return b.seat === seat.n && overlapsMin_(s, e, toMin_(b.start), toMin_(b.end)); })[0];
-    if (taken) {
-      return { ok: false, conflict: true, error: 'El lugar ' + seat.n + ' ya está ocupado ' + (taken.allDay ? 'todo ese día' : 'de ' + taken.start + ' a ' + taken.end) + '.' };
-    }
-    const mineOverlap = rows.filter(function (b) { return b.email === email && overlapsMin_(s, e, toMin_(b.start), toMin_(b.end)); })[0];
-    if (mineOverlap) {
-      return { ok: false, error: 'Ya tienes el lugar ' + mineOverlap.seat + ' reservado en ese horario. Cancélalo si quieres cambiarte.' };
-    }
-
-    const id = Utilities.getUuid().slice(0, 8).toUpperCase();
-    const sh = getSeatSheet_();
-    sh.appendRow([
-      id, fmt_(new Date(), 'yyyy-MM-dd HH:mm:ss'), data.date, start, end,
-      allDay ? 'Sí' : 'No', seat.n, seat.zone, email, name, 'Confirmada', agency, '', phone
-    ]);
-    const row = sh.getLastRow();
-
-    const info = { id: id, seat: seat.n, zone: seat.zone, date: data.date, start: start, end: end, allDay: allDay, name: name, agency: agency, phone: phone, email: email };
-    const chatStatus = notifySeat_('new', info, null);
-    try { sh.getRange(row, SEAT_COL_CHAT).setValue(chatStatus); } catch (x) { Logger.log('No se pudo anotar el estado de Chat: ' + x); }
-    if (CONFIG.SEND_CONFIRMATION_EMAIL) sendSeatEmail_('new', info, null);
-
-    return {
-      ok: true, id: id,
-      message: 'Lugar ' + seat.n + ' reservado (' + seat.zone + '): ' + data.date + ', ' + (allDay ? 'todo el día' : start + ' a ' + end) + '.',
-      chat: g.viewer.admin ? chatStatus : undefined   // solo los administradores ven si falló el aviso
-    };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
-}
-
-function actionSeatCancel_(data) {
-  const g = seatGate_(data);
-  if (g.fail) return g.fail;
-  const id = String(data.id || '');
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const b = readSeatRows_().filter(function (r) { return r.id === id; })[0];
-    if (!b) return { ok: false, error: 'No encontramos esa reserva. Puede que ya se haya cancelado.' };
-    if (!g.viewer.admin && b.email !== g.viewer.email) return { ok: false, error: 'Solo quien reservó el lugar puede cancelarlo.' };
-    if (isPast_(b.date, b.end)) return { ok: false, error: 'Esa reserva ya terminó y no se puede cancelar.' };
-    getSeatSheet_().getRange(b.row, SEAT_COL_STATUS).setValue('Cancelada');
-    const by = g.viewer.email !== b.email ? g.viewer.email : '';
-    const chatStatus = notifySeat_('cancel', b, { by: by });
-    if (CONFIG.SEND_CONFIRMATION_EMAIL) sendSeatEmail_('cancel', b, { by: by });
-    return {
-      ok: true,
-      message: 'Reserva cancelada: lugar ' + b.seat + ', ' + b.date + ' ' + (b.allDay ? '(todo el día)' : b.start + '–' + b.end) + '.',
-      chat: g.viewer.admin ? chatStatus : undefined
-    };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
-}
-
-// ===================== DÍAS CERRADOS =====================
-const WEEKDAY_NAMES = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
-const CLOSURE_HEADERS = ['Fecha', 'Motivo', 'Aplica a', 'Creado por'];
-
-function getClosuresSheet_() {
-  const ss = getSpreadsheet_();
-  let sh = ss.getSheetByName(CONFIG.CLOSURES_SHEET_NAME);
-  if (!sh) sh = ss.insertSheet(CONFIG.CLOSURES_SHEET_NAME);
-  if (sh.getLastRow() === 0) {
-    sh.getRange(1, 1, 1, CLOSURE_HEADERS.length).setValues([CLOSURE_HEADERS]).setFontWeight('bold');
-    sh.setFrozenRows(1);
-    sh.getRange('A:A').setNumberFormat('@'); // fecha como texto: 2026-12-25
-  }
-  return sh;
-}
-
-function normScope_(v) {
-  const x = String(v || '').trim().toLowerCase();
-  return x === 'salas' || x === 'lugares' ? x : 'todo';
-}
-
-/** Cierres anotados en la hoja: [{ date, reason, scope }]. Se guarda 30 s en memoria para no leer la hoja en cada consulta. */
-function readClosures_() {
-  const cache = CacheService.getScriptCache();
-  const hit = cache.get('closures');
-  if (hit) return JSON.parse(hit);
-
-  const sh = getClosuresSheet_();
-  const last = sh.getLastRow();
-  const out = [];
-  if (last >= 2) {
-    let tz = CONFIG.TIMEZONE;
-    try { tz = sh.getParent().getSpreadsheetTimeZone() || tz; } catch (e) {}
-    sh.getRange(2, 1, last - 1, CLOSURE_HEADERS.length).getValues().forEach(function (r) {
-      const date = r[0] instanceof Date ? Utilities.formatDate(r[0], tz, 'yyyy-MM-dd') : String(r[0]).trim();
-      if (!isDate_(date)) return;
-      out.push({ date: date, reason: String(r[1] || '').trim(), scope: normScope_(r[2]) });
-    });
-  }
-  cache.put('closures', JSON.stringify(out), 30);
-  return out;
-}
-
-function weekdayOf_(iso) {
-  const p = iso.split('-');
-  return new Date(+p[0], +p[1] - 1, +p[2]).getDay();
-}
-
-/** Horario de ese día. kind = 'rooms' | 'seats'. Un día con horario especial (WEEKDAY_HOURS) usa ese para los dos. */
-function hoursFor_(date, kind) {
-  const o = CONFIG.WEEKDAY_HOURS[weekdayOf_(date)];
+/* Horario de un día: los sábados tienen horario especial (lo manda el servidor). kind = 'rooms' | 'seats' */
+const weekdayOfIso = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
+function hoursFor(date, kind) {
+  const o = cfg && cfg.weekdayHours ? cfg.weekdayHours[weekdayOfIso(date)] : null;
   if (o) return { open: o.open, close: o.close };
-  return kind === 'seats'
-    ? { open: CONFIG.SEAT_OPEN_HOUR, close: CONFIG.SEAT_CLOSE_HOUR }
-    : { open: CONFIG.OPEN_HOUR, close: CONFIG.CLOSE_HOUR };
+  if (kind === 'seats') return { open: cfg.seatOpenHour != null ? cfg.seatOpenHour : cfg.openHour, close: cfg.seatCloseHour != null ? cfg.seatCloseHour : cfg.closeHour };
+  return { open: cfg.openHour, close: cfg.closeHour };
+}
+const roomHours = () => hoursFor($('date').value || cfg.today, 'rooms');
+
+function overlaps(roomId, s, e) {
+  return bookings.find((b) => b.roomId === roomId && !(editing && b.id && b.id === editing.id) && s < toMin(b.end) && e > toMin(b.start));
+}
+function currentRange() {
+  const start = $('start').value;
+  if (!start) return null;
+  const dur = parseInt($('duration').value, 10);
+  const s = toMin(start);
+  return { s, e: s + dur, start, dur };
 }
 
-/** ¿Está cerrada la oficina ese día? scope: 'salas' | 'lugares'. */
-function closedInfo_(date, scope) {
-  const wd = weekdayOf_(date);
-  if (CONFIG.CLOSED_WEEKDAYS.indexOf(wd) >= 0) {
-    return { closed: true, reason: 'La oficina está cerrada los ' + WEEKDAY_NAMES[wd] + '.' };
-  }
-  const hit = readClosures_().filter(function (c) { return c.date === date && (c.scope === 'todo' || c.scope === scope); })[0];
-  if (hit) return { closed: true, reason: hit.reason ? 'Cerrado ese día: ' + hit.reason : 'La oficina está cerrada ese día.' };
-  return { closed: false, reason: '' };
+/* ---------------- Sesión (solo en este navegador) ---------------- */
+function loadSession() {
+  try { const raw = localStorage.getItem('rs_session'); if (raw) session = JSON.parse(raw); } catch (e) {}
 }
-
-function adminGate_(data, what) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { fail: { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' } };
-  if (!viewer.admin) return { fail: { ok: false, forbidden: true, error: 'Solo los administradores pueden ' + what + '.' } };
-  return { viewer: viewer };
-}
-
-function actionClosures_(data) {
-  const g = adminGate_(data, 'ver los días cerrados');
-  if (g.fail) return g.fail;
-  const from = today_();
-  const list = readClosures_().filter(function (c) { return c.date >= from; })
-    .sort(function (a, b) { return a.date.localeCompare(b.date); });
-  return { ok: true, closures: list, closedWeekdays: CONFIG.CLOSED_WEEKDAYS.map(function (n) { return WEEKDAY_NAMES[n]; }) };
-}
-
-function actionClosureAdd_(data) {
-  const g = adminGate_(data, 'cerrar días');
-  if (g.fail) return g.fail;
-  const date = String(data.date || '');
-  if (!isDate_(date)) return { ok: false, error: 'Elige la fecha que quieres cerrar.' };
-  if (date < today_()) return { ok: false, error: 'No se puede cerrar un día que ya pasó.' };
-  const reason = clean_(data.reason, 120);
-  const scope = normScope_(data.scope);
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
+function saveSession() {
   try {
-    CacheService.getScriptCache().remove('closures');
-    const dup = readClosures_().filter(function (c) {
-      return c.date === date && (c.scope === scope || c.scope === 'todo' || scope === 'todo');
-    })[0];
-    if (dup) return { ok: false, error: 'Ese día ya tiene un cierre que lo cubre.' };
-
-    getClosuresSheet_().appendRow([date, reason, scope.charAt(0).toUpperCase() + scope.slice(1), g.viewer.email]);
-    CacheService.getScriptCache().remove('closures');
-    CacheService.getScriptCache().remove('day_' + date);
-
-    const rooms = scope === 'lugares' ? 0 : dayBookings_(date).filter(function (b) { return b.managed; }).length;
-    const seats = scope === 'salas' ? 0 : readSeatRows_().filter(function (b) { return b.date === date; }).length;
-    return {
-      ok: true,
-      message: 'Día cerrado: ' + date + (reason ? ' (' + reason + ')' : '') + '.',
-      existing: { rooms: rooms, seats: seats }
-    };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
+    if (session) localStorage.setItem('rs_session', JSON.stringify(session));
+    else localStorage.removeItem('rs_session');
+  } catch (e) {}
+}
+function endSession(expired) {
+  session = null; mine = null; codeStep = false;
+  if (editing) stopEdit();
+  saveSession();
+  seatsAllowed = null; seatBookings = []; seatMine = null; selectedSeat = null; seatGateMsg = '';
+  todayData = null; todayForbidden = ''; closures = null;
+  renderIdentity(); renderMine();
+  if (cfg) { renderDayList(); render(); renderSeatGate(); renderSeats(); renderSeatMine(); renderTodayGate(); }
+  if (expired) toast('Tu sesión venció. Verifica tu correo otra vez.', 'error');
 }
 
-function actionClosureRemove_(data) {
-  const g = adminGate_(data, 'reabrir días');
-  if (g.fail) return g.fail;
-  const date = String(data.date || '');
-  const scope = normScope_(data.scope);
-  if (!isDate_(date)) return { ok: false, error: 'Fecha inválida.' };
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const sh = getClosuresSheet_();
-    const last = sh.getLastRow();
-    let removed = 0;
-    if (last >= 2) {
-      let tz = CONFIG.TIMEZONE;
-      try { tz = sh.getParent().getSpreadsheetTimeZone() || tz; } catch (e) {}
-      const vals = sh.getRange(2, 1, last - 1, CLOSURE_HEADERS.length).getValues();
-      for (let i = vals.length - 1; i >= 0; i--) {
-        const d = vals[i][0] instanceof Date ? Utilities.formatDate(vals[i][0], tz, 'yyyy-MM-dd') : String(vals[i][0]).trim();
-        if (d === date && normScope_(vals[i][2]) === scope) { sh.deleteRow(i + 2); removed++; }
-      }
-    }
-    CacheService.getScriptCache().remove('closures');
-    CacheService.getScriptCache().remove('day_' + date);
-    if (!removed) return { ok: false, error: 'No encontramos ese cierre. Si es un día de la semana cerrado, se cambia en la configuración del script.' };
-    return { ok: true, message: 'Día reabierto: ' + date + '.' };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
+/* ---------------- Versiones (para saber qué falta actualizar) ---------------- */
+const PAGE_VERSION = 'l';
+function renderVersion() {
+  const el = $('versionNote');
+  const sv = cfg && cfg.version;
+  const ok = !!sv && sv === PAGE_VERSION;
+  el.textContent = `Página: versión ${PAGE_VERSION} · Script: ` + (sv ? `versión ${sv}` : 'desactualizado') +
+    (ok ? ' ✓' : ' ⚠️ Falta publicar la misma versión en Apps Script (Nueva versión) o subir el index.html a GitHub.');
+  el.className = 'mt-1 text-center text-xs ' + (ok ? 'text-slate-400' : 'font-semibold text-amber-700');
 }
 
-// ===================== HOY EN LA OFICINA (recepción y administradores) =====================
-function actionStaffDay_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' };
-  if (!viewer.staff) return { ok: false, forbidden: true, error: 'Esta vista es solo para recepción y administradores.' };
-  const date = data.date || today_();
-  if (!isDate_(date)) return { ok: false, error: 'Fecha inválida.' };
-
-  CacheService.getScriptCache().remove('day_' + date);   // datos frescos
-  const rooms = dayBookings_(date).map(function (b) { return view_(b, viewer); })
-    .sort(function (a, b) { return (a.start + a.roomId).localeCompare(b.start + b.roomId); });
-  const seats = readSeatRows_().filter(function (b) { return b.date === date; })
-    .map(function (b) { return seatView_(b, viewer); })
-    .sort(function (a, b) { return a.seat - b.seat; });
-  return {
-    ok: true, date: date, admin: viewer.admin,
-    closedRooms: closedInfo_(date, 'salas'), closedSeats: closedInfo_(date, 'lugares'),
-    rooms: rooms, seats: seats, seatTotal: CONFIG.SEAT_MAP.seats.length
-  };
-}
-
-// ===================== LLEGADA A RECEPCIÓN =====================
-/** Enlace de llegada de una visita: firmado, imposible de adivinar y solo sirve para esa reserva. b = { id, roomId, date } */
-function arrivalToken_(b) {
-  const payload = Utilities.base64EncodeWebSafe(b.id + '|' + b.roomId + '|' + b.date);
-  return payload + '.' + sign_('arr.' + payload);
-}
-
-function arrivalUrl_(b) {
-  return CONFIG.PAGE_URL + '#llegada=' + arrivalToken_(b);
-}
-
-function readArrivalToken_(token) {
-  const parts = String(token || '').split('.');
-  if (parts.length !== 2) return null;
-  if (sign_('arr.' + parts[0]) !== parts[1]) return null;
-  const d = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString().split('|');
-  return d.length === 3 ? { id: d[0], roomId: d[1], date: d[2] } : null;
-}
-
-function arrivalContext_(token) {
-  const t = readArrivalToken_(token);
-  if (!t) return { error: 'Este enlace no es válido.' };
-  const found = findManagedEvent_(t.roomId, t.date, t.id);
-  if (!found) return { error: 'Esta visita ya no existe (puede que se haya cancelado).' };
-  return { t: t, found: found, b: eventToBooking_(found.ev, found.room, t.date) };
-}
-
-/** early = todavía no se puede avisar · open = ya se puede · late = la visita ya terminó */
-function arrivalState_(b) {
-  const base = Utilities.parseDate(b.date + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm').getTime();
-  const startMs = base + toMin_(b.start) * 60000;
-  const endMs = base + toMin_(b.end) * 60000;
-  const opensMs = startMs - CONFIG.ARRIVAL_MINUTES_BEFORE * 60000;
-  const now = Date.now();
-  if (now < opensMs) return { state: 'early', opensAt: fmt_(new Date(opensMs), 'HH:mm'), opensOn: fmt_(new Date(opensMs), 'yyyy-MM-dd') };
-  if (now > endMs + CONFIG.ARRIVAL_MINUTES_AFTER * 60000) return { state: 'late' };
-  return { state: 'open' };
-}
-
-function actionArrivalInfo_(data) {
-  if (!CONFIG.ARRIVAL_ENABLED) return { ok: false, error: 'El aviso de llegada no está activo.' };
-  const c = arrivalContext_(data.arrival);
-  if (c.error) return { ok: false, error: c.error };
-  const st = arrivalState_(c.b);
-  return {
-    ok: true, officeName: CONFIG.OFFICE_NAME, officeAddress: CONFIG.OFFICE_ADDRESS,
-    visitor: (c.b.agency ? c.b.agency + ' · ' : '') + c.b.visitor,
-    room: c.found.room.name, floor: c.found.room.floor,
-    date: c.b.date, start: c.b.start, end: c.b.end,
-    state: st.state, opensAt: st.opensAt || '', opensOn: st.opensOn || '', today: today_(),
-    arrived: c.b.arrived || ''
-  };
-}
-
-/** La visita toca "Ya llegué" en su celular (sin iniciar sesión). */
-function actionArrivalConfirm_(data) {
-  if (!CONFIG.ARRIVAL_ENABLED) return { ok: false, error: 'El aviso de llegada no está activo.' };
-  const c = arrivalContext_(data.arrival);
-  if (c.error) return { ok: false, error: c.error };
-  const st = arrivalState_(c.b);
-  if (st.state === 'early') return { ok: false, early: true, error: 'Todavía es temprano. Podrás avisar desde las ' + st.opensAt + '.' };
-  if (st.state === 'late') return { ok: false, late: true, error: 'Esta visita ya terminó.' };
-  return markArrival_(c, 'La visita avisó desde su celular', false);
-}
-
-/** Quien agendó la visita (dentro de la ventana de tiempo), recepción o un administrador avisan que la visita ya llegó. */
-function actionArrivalMark_(data) {
-  const viewer = readToken_(data.token);
-  if (!viewer) return { ok: false, authRequired: true, error: 'Tu sesión venció. Verifica tu correo otra vez.' };
-  const found = findManagedEvent_(data.roomId, data.date, data.id);
-  if (!found) return { ok: false, error: 'No encontramos esa visita. Puede que se haya cancelado.' };
-  const b = eventToBooking_(found.ev, found.room, data.date);
-  const mine = !!(b.scheduler && b.scheduler === viewer.email);
-  if (!viewer.staff && !mine) {
-    return { ok: false, forbidden: true, error: 'Solo quien agendó la visita, recepción o un administrador pueden avisar la llegada.' };
-  }
-  if (!viewer.staff) {   // quien agendó solo puede avisar dentro de la ventana de tiempo
-    const st = arrivalState_(b);
-    if (st.state === 'early') return { ok: false, early: true, error: 'Todavía es temprano. Podrás avisar desde las ' + st.opensAt + '.' };
-    if (st.state === 'late') return { ok: false, late: true, error: 'Esta visita ya terminó.' };
-  }
-  const by = (viewer.staff && !mine) ? 'Marcado por recepción (' + viewer.email + ')' : 'Avisó quien agendó (' + schedulerName_(viewer.email) + ')';
-  return markArrival_({ t: { id: b.id, roomId: found.room.id, date: data.date }, found: found, b: b }, by, viewer.admin);
-}
-
-function markArrival_(c, by, showChatStatus) {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const prev = c.found.ev.getTag('arrived');
-    if (prev) return { ok: true, already: true, arrivedAt: prev, message: 'Ya habíamos avisado a recepción a las ' + prev + '.' };
-    const at = fmt_(new Date(), 'HH:mm');
-    c.found.ev.setTag('arrived', at);
-    const cols = {}; cols[COL_ARRIVAL] = at;
-    updateLog_(c.b.id, cols);
-    const chatStatus = notifyArrival_(c.b, c.found.room, at, by);
-    CacheService.getScriptCache().remove('day_' + c.t.date);
-    return { ok: true, arrivedAt: at, message: 'Listo, ya avisamos a recepción.', chat: showChatStatus ? chatStatus : undefined };
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
-  }
-}
-
-/** Aviso a Chat (con mención a todos) y correo a las personas configuradas y a quien agendó. */
-function notifyArrival_(b, room, at, by) {
-  const who = (b.agency ? b.agency + ' / ' : '') + b.visitor;
-  const lines = [
-    (CONFIG.ARRIVAL_MENTION_ALL ? '<users/all> ' : '') + '🚪 *Ya llegó a recepción* — hay que bajar por la visita',
-    '👤 *' + (b.agency ? 'Broker / inmobiliaria' : 'Visita') + ':* ' + who,
-    '🕒 *Cita:* ' + b.start + ' – ' + b.end + ' · ' + room.name + ' (' + room.floor + ')',
-    '🏢 *Host:* ' + (b.host || '—'),
-    '📝 *Motivo:* ' + (b.purpose || '—')
-  ];
-  if (b.number) lines.push('📞 *' + CONFIG.NUMBER_LABEL + ':* ' + b.number);
-  if (b.scheduler) lines.push('🙋 *Agendó:* ' + schedulerName_(b.scheduler) + ' (' + b.scheduler + ')');
-  lines.push('⏰ *Llegó a las:* ' + at + (by ? ' · ' + by : ''));
-  const chat = CONFIG.ARRIVAL_CHAT ? postToChat_(lines.join('\n')) : { ok: true, status: 'Chat desactivado' };
-  if (!chat.ok) Logger.log('Aviso de llegada a Google Chat FALLÓ → ' + chat.status);
-
-  try {
-    const to = [];
-    CONFIG.ARRIVAL_NOTIFY_EMAILS.forEach(function (e) { if (isEmail_(e)) to.push(String(e).toLowerCase()); });
-    if (CONFIG.ARRIVAL_NOTIFY_SCHEDULER && b.scheduler) to.push(b.scheduler);
-    const uniq = to.filter(function (e, i, a) { return a.indexOf(e) === i; });
-    if (uniq.length) {
-      const rows = [['Visita', who], ['Cita', b.start + ' – ' + b.end], ['Sala', room.name + ' · ' + room.floor], ['Host', b.host || '—'], ['Motivo', b.purpose || '—']];
-      if (b.number) rows.push([CONFIG.NUMBER_LABEL, b.number]);
-      rows.push(['Llegó a las', at + (by ? ' · ' + by : '')]);
-      const html = '<div style="font-family:Arial,sans-serif;max-width:480px;color:#0F1F2E">' +
-        '<h2 style="margin:0 0 8px">🚪 Ya llegó a recepción</h2><p style="margin:0 0 16px">Hay que bajar a recepción por esta visita:</p>' +
-        '<table style="border-collapse:collapse;width:100%">' +
-        rows.map(function (r) {
-          return '<tr><td style="padding:6px 12px 6px 0;color:#5b6b7a;vertical-align:top">' + escHtml_(r[0]) +
-                 '</td><td style="padding:6px 0;font-weight:bold">' + escHtml_(r[1]) + '</td></tr>';
-        }).join('') + '</table></div>';
-      MailApp.sendEmail({
-        to: uniq.join(','), subject: 'Ya llegó a recepción: ' + b.visitor + ' · cita de las ' + b.start,
-        htmlBody: html, body: 'Ya llegó a recepción\n\n' + rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n'),
-        name: 'Reserva de salas', replyTo: CONFIG.ALWAYS_GUEST
-      });
-    }
-  } catch (err) {
-    Logger.log('Error enviando el correo de llegada: ' + err);
-  }
-  return chat.status;
-}
-
-// ===================== AUTOMATIZACIONES =====================
-function addDays_(iso, n) {
-  const p = iso.split('-');
-  const d = new Date(+p[0], +p[1] - 1, +p[2] + n);
-  return d.getFullYear() + '-' + pad_(d.getMonth() + 1) + '-' + pad_(d.getDate());
-}
-
-function roomName_(id) {
-  const r = roomById_(id);
-  return r ? r.name : id;
-}
-
-/** Texto del resumen diario para Google Chat. */
-function dailySummaryText_(date, rooms, seats) {
-  const out = ['🗓️ *Hoy en la oficina · ' + spanishDate_(date) + '*', CONFIG.OFFICE_HOURS_NOTE, ''];
-
-  const sortedRooms = rooms.slice().sort(function (a, b) { return (a.start + a.roomId).localeCompare(b.start + b.roomId); });
-  out.push('*Visitas (' + sortedRooms.length + ')*');
-  if (!sortedRooms.length) out.push('• Sin visitas reservadas');
-  sortedRooms.forEach(function (b) {
-    const who = (b.agency ? b.agency + ' / ' : '') + b.visitor + (b.host ? ' (' + b.host + ')' : '');
-    out.push('• ' + b.start + '–' + b.end + ' · ' + roomName_(b.roomId) + ' · ' + who +
-      (b.purpose ? ' · ' + b.purpose : '') + (b.number ? ' · 📞 ' + b.number : ''));
+/* ---------------- API ---------------- */
+async function api(body) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita el preflight CORS
+    body: JSON.stringify(body)
   });
-
-  out.push('');
-  const sortedSeats = seats.slice().sort(function (a, b) { return a.seat - b.seat; });
-  out.push('*Lugares de trabajo (' + sortedSeats.length + ' de ' + CONFIG.SEAT_MAP.seats.length + ' ocupados)*');
-  if (!sortedSeats.length) out.push('• Sin lugares reservados');
-  sortedSeats.forEach(function (b) {
-    out.push('• Lugar ' + b.seat + ' · ' + (b.allDay ? 'Todo el día' : b.start + '–' + b.end) + ' · ' + b.name +
-      (b.agency ? ' (' + b.agency + ')' : '') + (b.phone ? ' · 📞 ' + b.phone : ''));
-  });
-
-  let text = out.join('\n');
-  if (text.length > 3800) {
-    text = text.slice(0, 3700).replace(/\n[^\n]*$/, '') + '\n… La lista es larga; revisa la pestaña "Hoy en la oficina": ' + CONFIG.PAGE_URL;
-  }
-  return text;
+  return res.json();
 }
 
-function resumenDiario_(forzar) {
-  const date = today_();
-  const cr = closedInfo_(date, 'salas'), cs = closedInfo_(date, 'lugares');
-  if (!forzar && cr.closed && cs.closed) {
-    Logger.log('Hoy la oficina está cerrada (' + cr.reason + '). No se envía el resumen.');
+async function loadDay(silent) {
+  if (!CONFIGURED) {
+    $('configBanner').classList.remove('hidden');
+    setLive(false, 'Sin conexión configurada');
     return;
   }
-  CacheService.getScriptCache().remove('day_' + date);
-  const rooms = (cr.closed && !forzar) ? [] : dayBookings_(date);
-  const seats = (cs.closed && !forzar) ? [] : readSeatRows_().filter(function (b) { return b.date === date; });
-  if (!forzar && !rooms.length && !seats.length && !CONFIG.DAILY_SUMMARY_SEND_EMPTY) {
-    Logger.log('Hoy no hay reservas. No se envía el resumen.');
-    return;
-  }
-  const r = postToChat_(dailySummaryText_(date, rooms, seats));
-  Logger.log(r.ok ? 'Resumen del día enviado a Chat.' : 'El resumen FALLÓ → ' + r.status);
-}
-
-/** Se ejecuta sola cada mañana (ver instalarAutomatizaciones). */
-function enviarResumenDiario() { resumenDiario_(false); }
-
-/** PRUEBA: manda el resumen de hoy a Chat ahora mismo, aunque no haya reservas o sea día cerrado. */
-function probarResumenDiario() { resumenDiario_(true); }
-
-function sendReminderEmail_(kind, b, to, prueba) {
   try {
-    let title, subject, rows, calendarLink = '', footer;
-    if (kind === 'room') {
-      const who = (b.agency ? b.agency + ' / ' : '') + b.visitor;
-      title = 'Recordatorio: tienes una visita mañana';
-      subject = 'Recordatorio: visita mañana a las ' + b.start + ' · ' + roomName_(b.roomId);
-      rows = [[b.agency ? 'Inmobiliaria / broker' : 'Visita', who], ['Motivo', b.purpose || '—'], ['Host', b.host || '—']];
-      if (b.number) rows.push([CONFIG.NUMBER_LABEL, b.number]);
-      rows.push(['Sala', roomName_(b.roomId)], ['Fecha y hora', spanishDate_(b.date) + ', ' + b.start + ' – ' + b.end]);
-      footer = 'Si ya no se va a realizar, cancélala o reagéndala aquí para liberar la sala: ' + CONFIG.PAGE_URL;
-    } else {
-      title = 'Recordatorio: tienes un lugar de trabajo mañana';
-      subject = 'Recordatorio: tu lugar de trabajo de mañana (lugar ' + b.seat + ')';
-      rows = [['Lugar', b.seat + ' · ' + seatById_(b.seat).zone], ['Fecha', spanishDate_(b.date)], ['Horario', seatHours_(b)]];
-      calendarLink = gcalLink_('Lugar de trabajo ' + b.seat + ' · ' + CONFIG.OFFICE_NAME, b.date, b.start, b.end, 'Lugar ' + b.seat);
-      footer = 'Si no vas a ir, cancélalo aquí para liberar el lugar: ' + CONFIG.PAGE_URL + '#lugares';
+    const data = await api({ action: 'day', date: $('date').value || '', token: session ? session.token : '' });
+    if (!data.ok) throw new Error(data.error || 'Respuesta inválida');
+
+    const first = !cfg;
+    cfg = data.config;
+    loadedAt = Date.now();
+    bookings = data.bookings;
+    roomsClosed = data.closed || null;
+    renderVersion();
+
+    if (data.sessionExpired && session) endSession(true);
+    else if (data.viewer && session) { session.admin = data.viewer.admin; session.staff = !!data.viewer.staff; saveSession(); }
+
+    if (first) {
+      fillSelects();
+      $('date').min = cfg.today;
+      $('date').value = cfg.today;
+      if (data.date !== cfg.today) { await loadDay(true); return; }
+      if (session) loadMine();
+      initSeats();
+      initToday();
     }
-    rows.push(['Dirección', CONFIG.OFFICE_NAME + ' · ' + CONFIG.OFFICE_ADDRESS]);
-    rows.push(['Horario de la oficina', CONFIG.OFFICE_HOURS_NOTE.replace(/^Horario de trabajo de la oficina:\s*/i, '')]);
-
-    const arrLink = (kind === 'room' && CONFIG.ARRIVAL_ENABLED && b.id && b.id.indexOf('EJEMPLO') !== 0) ? arrivalUrl_({ id: b.id, roomId: b.roomId, date: b.date }) : '';
-    const arrHtml = arrLink ? '<p style="margin:16px 0 0;padding:12px;background:#ECF7F4;border-radius:10px;font-size:14px"><b>🚪 Mañana:</b> cuando llegues tú o tu visita a recepción, abran este enlace y toquen “Ya llegué”.<br><a href="' + escHtml_(arrLink) + '" style="color:#0B6E6E;font-weight:bold">Enlace de llegada</a></p>' : '';
-    const calHtml = calendarLink ? '<p style="margin:16px 0 0"><a href="' + escHtml_(calendarLink) + '" style="color:#0B6E6E;font-weight:bold">Agregar a mi Google Calendar</a></p>' : '';
-    const html =
-      '<div style="font-family:Arial,sans-serif;max-width:480px;color:#0F1F2E">' +
-      (prueba ? '<p style="background:#FEF3C7;padding:8px 12px;border-radius:8px;font-size:13px">PRUEBA: este es un ejemplo de recordatorio. No se envió a nadie más.</p>' : '') +
-      '<h2 style="margin:0 0 8px">' + escHtml_(title) + '</h2>' +
-      '<table style="border-collapse:collapse;width:100%">' +
-      rows.map(function (r) {
-        return '<tr><td style="padding:6px 12px 6px 0;color:#5b6b7a;vertical-align:top">' + escHtml_(r[0]) +
-               '</td><td style="padding:6px 0;font-weight:bold">' + escHtml_(r[1]) + '</td></tr>';
-      }).join('') +
-      '</table>' + calHtml + arrHtml +
-      '<p style="margin:16px 0 0;color:#5b6b7a;font-size:13px">' + escHtml_(footer) + '</p></div>';
-    const text = title + '\n\n' + rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') + '\n\n' + footer +
-      (calendarLink ? '\n\nAgregar a mi Google Calendar: ' + calendarLink : '') +
-      (arrLink ? '\n\nEnlace de llegada (se abre al llegar a recepción y se toca "Ya llegué"): ' + arrLink : '');
-
-    MailApp.sendEmail({ to: to, subject: (prueba ? '[PRUEBA] ' : '') + subject, htmlBody: html, body: text, name: 'Reserva de salas', replyTo: CONFIG.ALWAYS_GUEST });
-    return true;
+    buildStartOptions();
+    render();
+    renderIdentity();
+    setLive(true, 'Actualizado ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   } catch (err) {
-    Logger.log('Error enviando recordatorio (' + kind + '): ' + err);
-    return false;
+    setLive(false, 'Sin conexión con el servidor');
+    if (!silent) toast('No pudimos cargar la disponibilidad. Revisa la URL de la Web App.', 'error');
+    console.error(err);
   }
 }
 
-/** Manda los recordatorios del día `date`. Con prueba = true solo manda unos ejemplos a servicio al cliente. */
-function recordatoriosDe_(date, prueba) {
-  const props = PropertiesService.getScriptProperties();
-  const key = 'REM_' + date;
-  if (!prueba && props.getProperty(key) === 'hecho') {
-    Logger.log('Los recordatorios de ' + date + ' ya se habían enviado. No se repite.');
-    return 0;
+async function loadMine() {
+  if (!session) return;
+  mine = null; renderMine();
+  try {
+    const r = await api({ action: 'myBookings', token: session.token, days: 60 });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) throw new Error(r.error);
+    mine = { bookings: r.bookings };
+    session.admin = r.admin; saveSession();
+  } catch (err) {
+    console.error(err);
+    mine = { bookings: [] };
+    toast('No pudimos cargar tus reservas.', 'error');
   }
-  const cr = closedInfo_(date, 'salas'), cs = closedInfo_(date, 'lugares');
-  CacheService.getScriptCache().remove('day_' + date);
-  const rooms = cr.closed ? [] : dayBookings_(date).filter(function (b) { return b.managed && b.scheduler; });
-  const seats = cs.closed ? [] : readSeatRows_().filter(function (b) { return b.date === date; });
-
-  let sent = 0;
-  const canSend = function () { return MailApp.getRemainingDailyQuota() > 5 && (!prueba || sent < 3); };
-  rooms.forEach(function (b) { if (canSend() && sendReminderEmail_('room', b, prueba ? CONFIG.ALWAYS_GUEST : b.scheduler, prueba)) sent++; });
-  seats.forEach(function (b) { if (canSend() && sendReminderEmail_('seat', b, prueba ? CONFIG.ALWAYS_GUEST : b.email, prueba)) sent++; });
-
-  // En la prueba, si mañana no hay reservas (o es día cerrado), se mandan 2 ejemplos con datos ficticios
-  // para que siempre puedas ver cómo se ve el correo.
-  if (prueba && sent === 0) {
-    const hs = hoursFor_(date, 'seats');
-    const ejemploSala = {
-      id: 'EJEMPLO1', roomId: CONFIG.ROOMS[0].id, date: date, start: '10:00', end: '11:00',
-      visitor: 'Nombre del broker (ejemplo)', agency: 'Inmobiliaria Ejemplo', host: 'Pulppo',
-      purpose: (CONFIG.PURPOSES_BY_HOST.Pulppo || ['Reunión'])[0], number: '3312345678', scheduler: CONFIG.ALWAYS_GUEST
-    };
-    const ejemploLugar = {
-      id: 'EJEMPLO2', seat: 2, date: date, start: fromMin_(hs.open * 60), end: fromMin_(hs.close * 60), allDay: true,
-      name: 'Nombre (ejemplo)', agency: 'Inmobiliaria Ejemplo', phone: '3312345678', email: CONFIG.ALWAYS_GUEST
-    };
-    if (sendReminderEmail_('room', ejemploSala, CONFIG.ALWAYS_GUEST, true)) sent++;
-    if (sendReminderEmail_('seat', ejemploLugar, CONFIG.ALWAYS_GUEST, true)) sent++;
-    Logger.log('Para ' + date + ' no hay reservas que recordar (o el día está cerrado). Se mandaron ' + sent + ' correos de EJEMPLO con datos ficticios a ' + CONFIG.ALWAYS_GUEST + '.');
-  }
-
-  if (!prueba) props.setProperty(key, 'hecho');
-  Logger.log('Recordatorios ' + (prueba ? '(de prueba) ' : '') + 'enviados para ' + date + ': ' + sent +
-    ' · correos que aún se pueden enviar hoy: ' + MailApp.getRemainingDailyQuota());
-  return sent;
+  renderMine(); renderIdentity();
 }
 
-/** Se ejecuta sola cada tarde: recuerda por correo las reservas del día siguiente. */
-function enviarRecordatorios() {
-  if (!CONFIG.SEND_REMINDERS) { Logger.log('Los recordatorios están desactivados.'); return; }
-  recordatoriosDe_(addDays_(today_(), 1), false);
+/* ---------------- Render ---------------- */
+function setLive(ok, text) {
+  $('liveDot').className = 'inline-block w-2 h-2 rounded-full ' + (ok ? 'bg-emerald-500 pulse-dot' : 'bg-slate-400');
+  $('liveText').textContent = text;
 }
 
-/** PRUEBA: manda hasta 3 recordatorios de ejemplo (de las reservas de mañana) SOLO a servicio al cliente. */
-function probarRecordatorios() { recordatoriosDe_(addDays_(today_(), 1), true); }
-
-/** Ejecútala UNA vez para activar el resumen de cada mañana y los recordatorios de cada tarde. */
-function instalarAutomatizaciones() {
-  const tz = Session.getScriptTimeZone();
-  if (tz !== CONFIG.TIMEZONE) {
-    Logger.log('⚠️ La zona horaria del proyecto es ' + tz + ' y debería ser ' + CONFIG.TIMEZONE +
-      '. Cámbiala en Configuración del proyecto → Zona horaria, o los avisos saldrán a otra hora.');
-  }
-  quitarAutomatizaciones();
-  ScriptApp.newTrigger('enviarResumenDiario').timeBased().everyDays(1).atHour(CONFIG.DAILY_SUMMARY_HOUR).create();
-  ScriptApp.newTrigger('enviarRecordatorios').timeBased().everyDays(1).atHour(CONFIG.REMINDER_HOUR).create();
-  Logger.log('Listo. Resumen en Chat cada día entre las ' + CONFIG.DAILY_SUMMARY_HOUR + ':00 y las ' + CONFIG.DAILY_SUMMARY_HOUR +
-    ':59 · recordatorios por correo entre las ' + CONFIG.REMINDER_HOUR + ':00 y las ' + CONFIG.REMINDER_HOUR + ':59.');
+const DUR_LABELS = { 30: '30 min', 45: '45 min', 60: '1 hora', 90: '1 h 30 min', 120: '2 horas', 180: '3 horas', 240: '4 horas' };
+function buildDurations() {
+  const max = cfg.maxDuration || 120;
+  const keep = $('duration').value || '60';
+  const opts = Object.keys(DUR_LABELS).map(Number).filter((m) => m <= max);
+  $('duration').innerHTML = opts.map((m) => `<option value="${m}">${DUR_LABELS[m]}</option>`).join('');
+  $('duration').value = opts.includes(Number(keep)) ? keep : String(opts.includes(60) ? 60 : opts[opts.length - 1]);
 }
 
-function quitarAutomatizaciones() {
-  ScriptApp.getProjectTriggers().forEach(function (t) {
-    const f = t.getHandlerFunction();
-    if (f === 'enviarResumenDiario' || f === 'enviarRecordatorios') ScriptApp.deleteTrigger(t);
-  });
+function fillSelects() {
+  if (cfg.officeHoursNote) $('officeNote').textContent = cfg.officeHoursNote;
+  buildDurations();
+  const hosts = cfg.hosts || [];
+  $('host').innerHTML = '<option value="">Elige el host</option>' +
+    hosts.map((h) => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
+  try {
+    const h = localStorage.getItem('rs_host'); if (h && hosts.includes(h)) $('host').value = h;
+  } catch (e) {}
+  updateHostFields();
 }
 
-// ===================== VALIDACIÓN Y BÚSQUEDA =====================
-function roomById_(id) {
-  return CONFIG.ROOMS.filter(function (r) { return r.id === id; })[0];
-}
+/* Cambia el formulario según el host: Pulppo pide inmobiliaria, un solo nombre (broker) y teléfono */
+function updateHostFields() {
+  if (!cfg) return;
+  const host = $('host').value;
+  const isAgency = (cfg.agencyHosts || []).includes(host);
+  const needNumber = (cfg.numberHosts || []).includes(host);
 
-/** Valida fecha, hora y duración. Devuelve { error } o los datos calculados. */
-function validateSlot_(date, start, durationRaw) {
-  if (!isDate_(date)) return { error: 'Fecha inválida.' };
-  if (!isTime_(start)) return { error: 'Hora de inicio inválida.' };
+  $('agencyBox').classList.toggle('hidden', !isAgency);
+  if (!isAgency) $('agency').value = '';
+  $('agencyLabel').textContent = cfg.agencyLabel || 'Inmobiliaria';
 
-  const duration = parseInt(durationRaw, 10);
-  if (!(duration >= 15)) return { error: 'Duración inválida.' };
-  if (duration > CONFIG.MAX_DURATION_MIN) {
-    return { error: 'La duración máxima de una reserva es de ' + humanDuration_(CONFIG.MAX_DURATION_MIN) + '.' };
+  $('visitorLabel').textContent = isAgency ? (cfg.brokerLabel || 'Nombre del broker responsable') : 'Nombre de la visita';
+  if (isAgency) {          // Pulppo: un solo nombre
+    $('visitor2').value = '';
+    $('visitor2Box').classList.add('hidden');
+    $('addVisitor2').classList.add('hidden');
+  } else if ($('visitor2Box').classList.contains('hidden')) {
+    $('addVisitor2').classList.remove('hidden');
   }
 
-  const startMin = toMin_(start);
-  const endMin = startMin + duration;
-  const hrs = hoursFor_(date, 'rooms');
-  if (startMin < hrs.open * 60 || endMin > hrs.close * 60) {
-    return { error: 'Las reservas deben estar entre las ' + hrs.open + ':00 y las ' + hrs.close + ':00' + (CONFIG.WEEKDAY_HOURS[weekdayOf_(date)] ? ' (horario especial de ese día).' : '.') };
+  $('numberLabel').textContent = cfg.numberLabel || 'Número';
+  $('numberBox').classList.toggle('hidden', !needNumber);
+  if (!needNumber) $('number').value = '';
+
+  // Motivos de ese host
+  const list = ((cfg.purposesByHost || {})[host]) || [];
+  const keep = $('purpose').value;
+  $('purpose').innerHTML = `<option value="">${host ? 'Elige el motivo' : 'Elige primero el host'}</option>` +
+    list.map((m) => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  if (list.includes(keep)) $('purpose').value = keep;
+}
+
+function buildStartOptions() {
+  const sel = $('start');
+  const previous = sel.value;
+  const nowMin = $('date').value === cfg.today ? nowMinutes() : -1;
+  const opts = [];
+  const rh = roomHours();
+  for (let m = rh.open * 60; m < rh.close * 60; m += cfg.stepMinutes) {
+    if (m >= nowMin) opts.push(fromMin(m));
   }
+  sel.innerHTML = opts.length
+    ? opts.map((t) => `<option value="${t}">${t}</option>`).join('')
+    : '<option value="">Sin horarios hoy</option>';
+  if (opts.includes(previous)) sel.value = previous;
+}
 
-  const startDate = Utilities.parseDate(date + ' ' + start, CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm');
-  const endDate = new Date(startDate.getTime() + duration * 60000);
-  if (startDate.getTime() < Date.now() - 5 * 60 * 1000) {
-    return { error: 'No puedes reservar en una hora que ya pasó.' };
+function renderIdentity() {
+  const verified = !!session;
+  $('idDone').classList.toggle('hidden', !verified);
+  $('idEmail').classList.toggle('hidden', verified || codeStep);
+  $('idCode').classList.toggle('hidden', verified || !codeStep);
+  if (verified) {
+    $('doneEmail').textContent = session.email;
+    $('adminBadge').textContent = session.admin ? 'Administrador' : 'Recepción';
+    $('adminBadge').classList.toggle('hidden', !(session.admin || session.staff));
   }
-  return { duration: duration, startMin: startMin, endMin: endMin, startDate: startDate, endDate: endDate, endStr: fromMin_(endMin) };
+  renderTabs();
 }
 
-/** Primer evento que se empalma con el rango (ignorando el evento con id = ignoreId). */
-function findClash_(cal, startDate, endDate, ignoreId) {
-  return cal.getEvents(startDate, endDate).filter(function (ev) {
-    return (!ignoreId || ev.getId() !== ignoreId) && ev.getEndTime() > startDate && ev.getStartTime() < endDate;
-  })[0];
-}
+function render() {
+  if (!cfg) return;
+  const range = currentRange();
 
-function clashError_(room, clash) {
-  return {
-    ok: false,
-    conflict: true,
-    error: room.name + ' ya está ocupada de ' + fmt_(clash.getStartTime(), 'HH:mm') + ' a ' + fmt_(clash.getEndTime(), 'HH:mm') + '.'
-  };
-}
-
-/** Busca una reserva creada por este sistema (tiene la etiqueta bookingId) en la sala y fecha indicadas. */
-function findManagedEvent_(roomId, date, id) {
-  const room = roomById_(roomId);
-  if (!room || !isDate_(date) || !/^[A-Za-z0-9-]{4,40}$/.test(String(id || ''))) return null;
-  const cal = CalendarApp.getCalendarById(room.calendarId);
-  if (!cal) return null;
-  const dayStart = Utilities.parseDate(date + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm');
-  const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
-  const ev = cal.getEvents(dayStart, dayEnd).filter(function (e) { return e.getTag('bookingId') === id; })[0];
-  return ev ? { room: room, cal: cal, ev: ev } : null;
-}
-
-/** ¿Ya terminó la reserva? (date = yyyy-MM-dd, endHHmm puede ser "24:00") */
-function isPast_(date, endHHmm) {
-  const base = Utilities.parseDate(date + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm').getTime();
-  return base + toMin_(endHHmm) * 60000 < Date.now();
-}
-
-/** Datos de una reserva leída de Calendar → formato para correos y avisos. */
-function bookingInfo_(b, room) {
-  return {
-    id: b.id, room: room, date: b.date, start: b.start, end: b.end,
-    duration: toMin_(b.end) - toMin_(b.start), host: b.host, visitor: b.visitor,
-    purpose: b.purpose, number: b.number, scheduler: b.scheduler, attendees: b.attendees, agency: b.agency
-  };
-}
-
-// ===================== PRIVACIDAD =====================
-/** Lo que ve cada persona: los demás solo ven el horario ocupado. */
-function view_(b, viewer) {
-  const mine = !!(viewer && b.scheduler && b.scheduler === viewer.email);
-  if (viewer && (viewer.admin || viewer.staff || mine)) {
-    // ¿se puede avisar la llegada de esta visita? (solo visitas hechas por el sistema, que no hayan llegado ni terminado)
-    const arr = (CONFIG.ARRIVAL_ENABLED && b.managed && !b.arrived && !isPast_(b.date, b.end)) ? arrivalState_(b) : null;
-    return {
-      id: b.id, roomId: b.roomId, date: b.date, start: b.start, end: b.end,
-      visitor: b.visitor, host: b.host, purpose: b.purpose, number: b.number, agency: b.agency,
-      attendees: b.attendees, arrived: b.arrived,
-      arrivalUrl: (CONFIG.ARRIVAL_ENABLED && b.managed && (viewer.admin || mine) && !isPast_(b.date, b.end)) ? arrivalUrl_(b) : '',
-      canMarkArrival: !!(arr && (viewer.staff || (mine && arr.state === 'open'))),
-      arrivalOpensAt: (arr && mine && !viewer.staff && arr.state === 'early') ? arr.opensAt : '',
-      scheduler: schedulerName_(b.scheduler),
-      schedulerEmail: viewer.admin ? b.scheduler : '',
-      mine: mine, detail: true,
-      editable: !!(b.managed && (viewer.admin || mine) && !isPast_(b.date, b.end))   // se puede cancelar / reagendar
-    };
-  }
-  return { roomId: b.roomId, date: b.date, start: b.start, end: b.end, detail: false };
-}
-
-/** Recepción o administración: pueden ver todos los datos del día (solo lectura, salvo los admins). */
-function isStaff_(email) {
-  const e = String(email || '').toLowerCase();
-  return isAdmin_(e) || CONFIG.RECEPTION.map(function (x) { return String(x).toLowerCase(); }).indexOf(e) >= 0;
-}
-
-function isAdmin_(email) {
-  return CONFIG.ADMINS.map(function (a) { return String(a).toLowerCase(); }).indexOf(email) >= 0;
-}
-
-// ===================== SESIONES (token firmado) =====================
-function secret_() {
-  const props = PropertiesService.getScriptProperties();
-  let s = props.getProperty('SESSION_SECRET');
-  if (!s) {
-    s = Utilities.getUuid() + Utilities.getUuid();
-    props.setProperty('SESSION_SECRET', s);
-  }
-  return s;
-}
-
-function sign_(payload) {
-  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, secret_()));
-}
-
-function makeToken_(email) {
-  const exp = Date.now() + CONFIG.SESSION_HOURS * 3600 * 1000;
-  const payload = Utilities.base64EncodeWebSafe(email) + '.' + exp;
-  return payload + '.' + sign_(payload);
-}
-
-/** Devuelve {email, admin} si el token es válido y no ha vencido; si no, null. */
-function readToken_(token) {
-  const parts = String(token || '').split('.');
-  if (parts.length !== 3) return null;
-  const payload = parts[0] + '.' + parts[1];
-  if (sign_(payload) !== parts[2]) return null;
-  if (Number(parts[1]) < Date.now()) return null;
-  const email = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString();
-  return { email: email, admin: isAdmin_(email), staff: isStaff_(email) };
-}
-
-// ===================== DISPONIBILIDAD (desde Calendar) =====================
-/** Reservas completas (uso interno) de un día. */
-function dayBookings_(date) {
-  const cache = CacheService.getScriptCache();
-  const hit = cache.get('day_' + date);
-  if (hit) return JSON.parse(hit);
-
-  const dayStart = Utilities.parseDate(date + ' 00:00', CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm');
-  const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
-  const out = [];
-
-  CONFIG.ROOMS.forEach(function (room) {
-    const cal = CalendarApp.getCalendarById(room.calendarId);
-    if (!cal) return;
-    cal.getEvents(dayStart, dayEnd).forEach(function (ev) {
-      out.push(eventToBooking_(ev, room, date));
-    });
-  });
-
-  cache.put('day_' + date, JSON.stringify(out), 15);
-  return out;
-}
-
-/** Convierte un evento de Calendar en una reserva. forDate = día que se está consultando (opcional). */
-function eventToBooking_(ev, room, forDate) {
-  const startDate = ev.getStartTime();
-  const endDate = ev.getEndTime();
-  let date, s, e;
-
-  if (ev.isAllDayEvent()) {
-    date = forDate || fmt_(ev.getAllDayStartDate(), 'yyyy-MM-dd');
-    s = CONFIG.OPEN_HOUR * 60;
-    e = CONFIG.CLOSE_HOUR * 60;
+  if (range) {
+    const rh = roomHours();
+    const late = range.e > rh.close * 60;
+    $('endHint').textContent = late
+      ? `Termina a las ${fromMin(range.e)}, después del cierre (${rh.close}:00).`
+      : `Termina a las ${fromMin(range.e)}.`;
+    $('endHint').className = 'col-span-6 -mt-2 text-sm ' + (late ? 'text-red-700' : 'text-slate-500');
   } else {
-    const startDay = fmt_(startDate, 'yyyy-MM-dd');
-    const endDay = fmt_(endDate, 'yyyy-MM-dd');
-    date = forDate || startDay;
-    s = startDay < date ? 0 : toMin_(fmt_(startDate, 'HH:mm'));
-    e = endDay > date ? 1440 : toMin_(fmt_(endDate, 'HH:mm'));
+    $('endHint').textContent = '';
   }
 
-  return {
-    id: ev.getTag('bookingId') || ev.getId(),
-    managed: !!ev.getTag('bookingId'),
-    roomId: room.id,
-    date: date,
-    start: fromMin_(s),
-    end: fromMin_(e),
-    visitor: ev.getTag('visitor') || ev.getTitle(),
-    host: ev.getTag('host') || '',
-    purpose: ev.getTag('purpose') || '',
-    number: ev.getTag('number') || '',
-    arrived: ev.getTag('arrived') || '',
-    agency: ev.getTag('agency') || '',
-    attendees: parseInt(ev.getTag('attendees') || '0', 10) || 0,
-    scheduler: String(ev.getTag('scheduler') || '').toLowerCase()
-  };
+  $('dayTitle').textContent = 'Disponibilidad · ' + prettyDate($('date').value || cfg.today);
+
+  renderRooms(range);
+  renderTimeline(range);
+  renderDayList();
+  const closed = !!(roomsClosed && roomsClosed.closed);
+  $('roomsClosedBanner').textContent = closed ? '🚫 ' + roomsClosed.reason : '';
+  $('roomsClosedBanner').classList.toggle('hidden', !closed);
+  $('submitBtn').disabled = !(range && range.e <= roomHours().close * 60 && selectedRoom && !submitting && !closed);
 }
 
-// ===================== GOOGLE CHAT =====================
-/** Envía un texto al webhook. Devuelve { ok, status } y nunca lanza errores. */
-function postToChat_(text, urlOverride) {
-  const url = urlOverride || CONFIG.WEBHOOK_URL;
-  if (!url || url.indexOf('PEGA_AQUI') === 0) {
-    return { ok: false, status: 'Sin webhook configurado' };
-  }
-  let last = 'Sin respuesta';
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const res = UrlFetchApp.fetch(url, {
-        method: 'post',
-        contentType: 'application/json; charset=UTF-8',
-        payload: JSON.stringify({ text: text }),
-        muteHttpExceptions: true
-      });
-      const code = res.getResponseCode();
-      if (code >= 200 && code < 300) return { ok: true, status: 'OK' };
-      last = 'HTTP ' + code + ': ' + String(res.getContentText()).replace(/\s+/g, ' ').slice(0, 200);
-    } catch (err) {
-      last = 'Error: ' + err;
-    }
-    if (attempt < 2) Utilities.sleep(800); // un reintento por si fue un fallo momentáneo
-  }
-  return { ok: false, status: last };
+function roomState(r, range) {
+  const people = parseInt($('attendees').value, 10) || 1;
+  if (people > r.capacity) return { off: true, text: `Máx. ${r.capacity} personas` };
+  const c = range ? overlaps(r.id, range.s, range.e) : null;
+  if (c) return { off: true, busy: true, text: `Ocupada ${c.start}–${c.end}` };
+  return { off: false, text: 'Libre' };
 }
 
-function chatText_(kind, b, extra) {
-  const head = kind === 'cancel' ? '❌ *Visita cancelada*'
-    : kind === 'resched' ? '🔄 *Visita reagendada*'
-    : '📅 *Nueva visita agendada*';
-  let t = head + '\n' +
-    (b.agency ? '🏘️ *' + CONFIG.AGENCY_LABEL + ':* ' + b.agency + '\n' + '👤 *Broker responsable:* ' + b.visitor + '\n' : '👤 *Visita:* ' + b.visitor + '\n') +
-    '📝 *Motivo:* ' + b.purpose + '\n' +
-    '🏢 *Host:* ' + b.host + '\n' +
-    (b.number ? '📞 *' + CONFIG.NUMBER_LABEL + ':* ' + b.number + '\n' : '') +
-    '🙋 *Agenda:* ' + schedulerName_(b.scheduler) + ' (' + b.scheduler + ')\n' +
-    '🚪 *Sala:* ' + b.room.name + ' · ' + b.room.floor + (b.attendees ? ' (' + b.attendees + ' de ' + b.room.capacity + ' personas)' : '') + '\n' +
-    '🗓️ *Fecha:* ' + b.date + '\n' +
-    '⏰ *Horario:* ' + b.start + ' – ' + b.end + ' (' + b.duration + ' min)\n' +
-    '🔖 Reserva #' + b.id;
-  if (kind === 'resched' && extra && extra.before) t += '\n↩️ *Antes:* ' + extra.before;
-  if (extra && extra.by) t += '\n👮 *Lo hizo:* ' + extra.by;
-  return t;
-}
+function renderRooms(range) {
+  const states = {};
+  cfg.rooms.forEach((r) => { states[r.id] = roomState(r, range); });
+  if (selectedRoom && states[selectedRoom] && states[selectedRoom].off) selectedRoom = null;
 
-/** Avisa al espacio de Chat. kind: new | resched | cancel. Devuelve 'OK' o el motivo del fallo. */
-function notifyChat_(kind, b, extra) {
-  const r = postToChat_(chatText_(kind, b, extra));
-  if (!r.ok) Logger.log('Aviso a Google Chat FALLÓ → ' + r.status);
-  return r.status;
-}
+  const free = cfg.rooms.filter((r) => !states[r.id].off).length;
+  $('freeCount').textContent = `${free} de ${cfg.rooms.length} disponibles`;
 
-/** PRUEBA: ejecútala desde el editor para ver si el webhook funciona y por qué falla si no. */
-function probarChat() {
-  const url = String(CONFIG.WEBHOOK_URL || '');
-  Logger.log('Webhook configurado: ' + (url ? url.slice(0, 55) + '…' : '(vacío)'));
-  const r = postToChat_('✅ Prueba de conexión del sistema de reservas. Si ves este mensaje, los avisos funcionan.');
-  Logger.log(r.ok ? 'RESULTADO: el mensaje se envió (OK). Revisa el espacio VISITAS HABI.' : 'RESULTADO: FALLÓ → ' + r.status);
-}
+  const floors = [];
+  cfg.rooms.forEach((r) => { if (!floors.includes(r.floor)) floors.push(r.floor); });
 
-// ===================== CORREOS =====================
-/** kind: new | resched | cancel */
-function sendBookingEmail_(kind, b, extra) {
-  try {
-    const when = spanishDate_(b.date) + ', ' + b.start + ' – ' + b.end;
-    const title = kind === 'cancel' ? 'Visita cancelada' : kind === 'resched' ? 'Reagendaste una visita' : 'Agendaste una visita';
-    const intro = kind === 'cancel' ? 'Esta reserva fue cancelada:'
-      : kind === 'resched' ? 'Tu reserva se actualizó. Estos son los datos nuevos:'
-      : 'Tu reserva quedó confirmada. Estos son los datos:';
-    const subjectPrefix = kind === 'cancel' ? 'Visita cancelada: ' : kind === 'resched' ? 'Visita reagendada: ' : 'Visita agendada: ';
+  $('roomList').innerHTML = floors.map((fl) => {
+    const cards = cfg.rooms.filter((r) => r.floor === fl).map((r) => {
+      const st = states[r.id], on = selectedRoom === r.id;
+      return `
+        <label class="block rounded-xl border px-3 py-2.5 transition-colors
+            ${st.off ? 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed' : 'cursor-pointer hover:border-teal'}
+            ${on ? 'border-teal bg-teal-soft ring-1 ring-teal' : 'border-slate-300'}">
+          <input type="radio" name="room" value="${esc(r.id)}" class="sr-only" ${st.off ? 'disabled' : ''} ${on ? 'checked' : ''}>
+          <span class="block text-sm font-semibold leading-tight ${st.off ? '' : 'text-ink'}">${esc(r.name)}</span>
+          <span class="block text-xs mt-0.5 ${st.busy ? 'text-red-700' : st.off ? 'text-slate-400' : (on ? 'text-teal-dark' : 'text-emerald-700')}">
+            ${r.capacity} pers. · ${esc(st.text)}
+          </span>
+        </label>`;
+    }).join('');
+    return `<div class="col-span-2 mt-1 text-xs font-semibold text-slate-500">${esc(fl)}</div>${cards}`;
+  }).join('');
 
-    const rows = b.agency
-      ? [[CONFIG.AGENCY_LABEL, b.agency], ['Broker responsable', b.visitor], ['Motivo', b.purpose], ['Host', b.host]]
-      : [['Visita', b.visitor], ['Motivo', b.purpose], ['Host', b.host]];
-    if (b.number) rows.push([CONFIG.NUMBER_LABEL, b.number]);
-    rows.push(['Sala', b.room.name + ' · ' + b.room.floor]);
-    rows.push(['Fecha y hora', when]);
-    if (kind === 'resched' && extra && extra.before) rows.push(['Antes', extra.before]);
-    if (extra && extra.by) rows.push([kind === 'cancel' ? 'Cancelada por' : 'Cambio hecho por', extra.by]);
-    if (kind !== 'cancel') rows.push(['Dirección', CONFIG.OFFICE_NAME + ' · ' + CONFIG.OFFICE_ADDRESS]);
-    rows.push(['Reserva', '#' + b.id]);
-
-    const arrLink = (kind !== 'cancel' && CONFIG.ARRIVAL_ENABLED) ? arrivalUrl_({ id: b.id, roomId: b.room ? b.room.id : b.roomId, date: b.date }) : '';
-    const arrHtml = arrLink ? '<p style="margin:16px 0 0;padding:12px;background:#ECF7F4;border-radius:10px;font-size:14px"><b>🚪 El día de la visita:</b> cuando llegues tú o tu visita a recepción, abran este enlace y toquen “Ya llegué”. Así avisamos al equipo y bajamos por ustedes.<br><a href="' + escHtml_(arrLink) + '" style="color:#0B6E6E;font-weight:bold">Enlace de llegada</a></p>' : '';
-    const arrText = arrLink ? '\n\nEl día de la visita: cuando llegues tú o tu visita a recepción, abran este enlace y toquen "Ya llegué". Así avisamos al equipo y bajamos por ustedes: ' + arrLink : '';
-
-    const footer = 'Si necesitas hacer un cambio, puedes cancelar o reagendar desde la página de reservas, o escribir a ' + CONFIG.ALWAYS_GUEST + '.';
-    const html =
-      '<div style="font-family:Arial,sans-serif;max-width:480px;color:#0F1F2E">' +
-      '<h2 style="margin:0 0 8px">' + escHtml_(title) + '</h2>' +
-      '<p style="margin:0 0 16px">' + escHtml_(intro) + '</p>' +
-      '<table style="border-collapse:collapse;width:100%">' +
-      rows.map(function (r) {
-        return '<tr><td style="padding:6px 12px 6px 0;color:#5b6b7a;vertical-align:top">' + escHtml_(r[0]) +
-               '</td><td style="padding:6px 0;font-weight:bold">' + escHtml_(r[1]) + '</td></tr>';
-      }).join('') +
-      '</table>' + arrHtml +
-      '<p style="margin:16px 0 0;color:#5b6b7a;font-size:13px">' + escHtml_(footer) + '</p></div>';
-    const text = title + '\n\n' + intro + '\n\n' +
-      rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n') + '\n\n' + footer + arrText;
-
-    MailApp.sendEmail({
-      to: b.scheduler,
-      subject: subjectPrefix + b.visitor + ' · ' + b.date + ' ' + b.start,
-      htmlBody: html,
-      body: text,
-      name: 'Reserva de salas',
-      replyTo: CONFIG.ALWAYS_GUEST
-    });
-  } catch (err) {
-    Logger.log('Error enviando correo (' + kind + '): ' + err);
-  }
-}
-
-// ===================== SHEETS =====================
-function getSpreadsheet_() {
-  if (CONFIG.SHEET_ID) return SpreadsheetApp.openById(CONFIG.SHEET_ID);
-  const active = SpreadsheetApp.getActiveSpreadsheet();
-  if (active) return active;
-
-  const props = PropertiesService.getScriptProperties();
-  const saved = props.getProperty('SHEET_ID');
-  if (saved) return SpreadsheetApp.openById(saved);
-  const ss = SpreadsheetApp.create('Reservas de salas');
-  props.setProperty('SHEET_ID', ss.getId());
-  return ss;
-}
-
-function getSheet_() {
-  const ss = getSpreadsheet_();
-  let sh = ss.getSheetByName(CONFIG.SHEET_NAME);
-  if (!sh) sh = ss.insertSheet(CONFIG.SHEET_NAME);
-  if (sh.getLastRow() === 0) {
-    sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
-    sh.setFrozenRows(1);
-    sh.getRange('C:E').setNumberFormat('@'); // fecha y horas como texto
-    sh.getRange('N:N').setNumberFormat('@'); // teléfono como texto
-  }
-  return sh;
-}
-
-/** Actualiza columnas de la fila de una reserva. cols = { numeroDeColumna: valor } */
-function updateLog_(id, cols) {
-  try {
-    const sh = getSheet_();
-    const last = sh.getLastRow();
-    if (last < 2) return;
-    const ids = sh.getRange(1, 1, last, 1).getValues();
-    for (let i = last - 1; i >= 1; i--) {
-      if (String(ids[i][0]) === String(id)) {
-        Object.keys(cols).forEach(function (k) { sh.getRange(i + 1, Number(k)).setValue(cols[k]); });
-        return;
-      }
-    }
-  } catch (err) {
-    Logger.log('No se pudo actualizar la hoja: ' + err);
-  }
-}
-
-// ===================== UTILIDADES =====================
-function publicConfig_() {
-  return {
-    rooms: CONFIG.ROOMS.map(function (r) {
-      return { id: r.id, name: r.name, floor: r.floor, capacity: r.capacity };
-    }),
-    hosts: CONFIG.HOSTS,
-    purposes: allPurposes_(),
-    purposesByHost: CONFIG.PURPOSES_BY_HOST,
-    agencyHosts: CONFIG.AGENCY_HOSTS,
-    agencyLabel: CONFIG.AGENCY_LABEL,
-    brokerLabel: CONFIG.BROKER_LABEL,
-    numberHosts: CONFIG.NUMBER_HOSTS,
-    numberLabel: CONFIG.NUMBER_LABEL,
-    maxDuration: CONFIG.MAX_DURATION_MIN,
-    seatMap: CONFIG.SEAT_MAP,
-    seatStep: CONFIG.SEAT_STEP_MINUTES,
-    seatOpenHour: CONFIG.SEAT_OPEN_HOUR,
-    seatCloseHour: CONFIG.SEAT_CLOSE_HOUR,
-    officeHoursNote: CONFIG.OFFICE_HOURS_NOTE,
-    version: CONFIG.VERSION,
-    officeName: CONFIG.OFFICE_NAME,
-    officeAddress: CONFIG.OFFICE_ADDRESS,
-    closedWeekdays: CONFIG.CLOSED_WEEKDAYS,
-    weekdayHours: CONFIG.WEEKDAY_HOURS,
-    seatMaxDaysAhead: CONFIG.SEAT_MAX_DAYS_AHEAD,
-    openHour: CONFIG.OPEN_HOUR,
-    closeHour: CONFIG.CLOSE_HOUR,
-    stepMinutes: CONFIG.STEP_MINUTES,
-    timezone: CONFIG.TIMEZONE,
-    today: today_(),
-    nowTime: fmt_(new Date(), 'HH:mm')
-  };
-}
-
-/** Todos los motivos de todos los hosts, sin repetir. */
-function allPurposes_() {
-  const out = [];
-  Object.keys(CONFIG.PURPOSES_BY_HOST).forEach(function (h) {
-    CONFIG.PURPOSES_BY_HOST[h].forEach(function (m) { if (out.indexOf(m) < 0) out.push(m); });
+  $('roomList').querySelectorAll('input[name=room]').forEach((inp) => {
+    inp.addEventListener('change', () => { selectedRoom = inp.value; render(); });
   });
-  return out;
 }
 
-/** Enlace para agregar un evento a Google Calendar (no necesita invitación). */
-function gcalLink_(title, date, start, end, details) {
-  const d = String(date).replace(/-/g, '');
-  const f = function (t) { return d + 'T' + String(t).replace(':', '') + '00'; };
+function renderTimeline(range) {
+  const rh = roomHours();
+  const open = rh.open * 60, close = rh.close * 60, span = close - open;
+  const pct = (m) => ((m - open) / span) * 100;
+
+  let axis = '';
+  for (let h = rh.open; h <= rh.close; h += 2) {
+    axis += `<span class="absolute -translate-x-1/2" style="left:${pct(h * 60)}%">${h}:00</span>`;
+  }
+  $('hourAxis').innerHTML = axis;
+
+  $('timeline').innerHTML = cfg.rooms.map((r) => {
+    const blocks = bookings.filter((b) => b.roomId === r.id).map((b) => {
+      const l = Math.max(0, pct(toMin(b.start))), w = Math.min(100, pct(toMin(b.end))) - l;
+      const label = b.detail ? b.visitor : 'Ocupada';
+      const tip = b.detail
+        ? `${b.start}–${b.end} · ${b.agency ? b.agency + ' / ' : ''}${b.visitor}` + (b.purpose ? ` · ${b.purpose}` : '') + (b.host ? ` · ${b.host}` : '')
+        : `Ocupada ${b.start}–${b.end}`;
+      const cls = b.mine ? 'mine-block' : 'hatch';
+      return `<div class="${cls} absolute inset-y-0 rounded-md border overflow-hidden flex items-center"
+                   style="left:${l}%;width:${w}%" title="${esc(tip)}">
+                <span class="px-1.5 text-[11px] font-semibold whitespace-nowrap">${esc(label)}</span>
+              </div>`;
+    }).join('');
+
+    let sel = '';
+    if (range && selectedRoom === r.id) {
+      const l = Math.max(0, pct(range.s)), w = Math.min(100, pct(Math.min(range.e, close))) - l;
+      sel = `<div class="absolute inset-y-0 rounded-md bg-teal/90 ring-2 ring-teal" style="left:${l}%;width:${w}%"></div>`;
+    }
+
+    return `
+      <div class="flex items-center">
+        <div class="w-40 shrink-0 pr-3">
+          <div class="text-sm font-semibold leading-tight">${esc(r.name)}</div>
+          <div class="text-xs text-slate-500">${esc(r.floor)} · ${r.capacity} pers.</div>
+        </div>
+        <div class="track relative flex-1 h-9 rounded-md"
+             style="background-size:${100 / (span / 60)}% 100%">${blocks}${sel}</div>
+      </div>`;
+  }).join('');
+}
+
+function bookingCard(b, withDate) {
+  const meta = [];
+  if (b.host) meta.push('Host: ' + esc(b.host));
+  if (b.number) meta.push((cfg && cfg.numberLabel ? esc(cfg.numberLabel) : 'N.º') + ': ' + esc(b.number));
+  if (b.schedulerEmail) meta.push('Agenda: ' + esc(b.schedulerEmail));
+  else if (b.scheduler && !b.mine) meta.push('Agenda: ' + esc(b.scheduler));
+
+  const btn = 'rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold';
+  const actions = [];
+  if (b.canMarkArrival && !b.arrived) actions.push(`<button type="button" data-act="arrive" data-id="${esc(b.id)}" title="${isStaff() ? 'Avisa en el chat que la visita ya llegó' : 'Avisa al equipo para que baje a recepción por la visita'}" class="${btn} border-emerald-300 text-emerald-800 hover:bg-emerald-50">${isStaff() ? '🚪 Marcar llegada' : '🚪 Avisar llegada'}</button>`);
+  if (b.arrivalUrl) actions.push(`<button type="button" data-act="copyarr" data-url="${esc(b.arrivalUrl)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Copiar enlace de llegada</button>`);
+  if (b.editable) {
+    actions.push(`<button type="button" data-act="resched" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Reagendar</button>`);
+    actions.push(`<button type="button" data-act="cancel" data-id="${esc(b.id)}" class="${btn} border-red-200 text-red-700 hover:bg-red-50">Cancelar</button>`);
+  }
+  const arrived = b.arrived ? `<div class="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">✅ Llegó a las ${esc(b.arrived)}</div>`
+    : (b.arrivalOpensAt ? `<div class="mt-1 text-xs text-slate-500">🚪 Podrás avisar la llegada de la visita desde las ${esc(b.arrivalOpensAt)}</div>` : '');
+
+  return `
+    <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-start gap-x-4 gap-y-1">
+      <div class="w-32 shrink-0">
+        ${withDate ? `<div class="text-xs font-semibold text-slate-500 capitalize">${esc(prettyDate(b.date, true))}</div>` : ''}
+        <div class="font-bold tabular-nums">${esc(b.start)}–${esc(b.end)}</div>
+        <div class="text-xs text-slate-500">${esc(roomName(b.roomId))}</div>
+      </div>
+      <div class="flex-1 min-w-[12rem]">
+        <div class="font-semibold">${b.agency ? esc(b.agency) + ' · ' : ''}${esc(b.visitor)}</div>
+        <div class="text-sm text-slate-600">${esc(b.purpose || 'Sin motivo indicado')}</div>
+        <div class="text-xs text-slate-500 mt-0.5">${meta.join(' · ')}</div>
+        ${arrived}
+        ${actions.length ? `<div class="flex flex-wrap gap-2 mt-2">${actions.join('')}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderDayList() {
+  if (!cfg) return;
+  $('dayListTitle').textContent = !session ? 'Reservas del día'
+    : (session.admin ? 'Todas las reservas del día' : 'Tus reservas del día');
+
+  if (!session) {
+    $('dayItems').innerHTML = '<p class="text-sm text-slate-500">Verifica tu correo para ver los datos de tus reservas. Las demás salas aparecen solo como ocupadas.</p>';
+    return;
+  }
+  const list = bookings.filter((b) => b.detail).sort((a, b) => toMin(a.start) - toMin(b.start));
+  $('dayItems').innerHTML = list.length
+    ? list.map((b) => bookingCard(b, false)).join('')
+    : '<p class="text-sm text-slate-500">No hay reservas tuyas para este día.</p>';
+}
+
+function renderMine() {
+  const box = $('mineBox');
+  if (!session) { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  $('mineTitle').textContent = (session.admin ? 'Todas las reservas' : 'Mis reservas') + ' · próximos 60 días';
+
+  if (mine === null) { $('mineItems').innerHTML = '<p class="text-sm text-slate-500">Cargando…</p>'; return; }
+  $('mineItems').innerHTML = mine.bookings.length
+    ? mine.bookings.map((b) => bookingCard(b, true)).join('')
+    : '<p class="text-sm text-slate-500">Todavía no hay reservas próximas.</p>';
+}
+
+/* ---------------- Mensajes ---------------- */
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast-in mb-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg ' +
+    (type === 'error' ? 'bg-red-700 text-white' : 'bg-ink text-white');
+  el.textContent = msg;
+  $('toastBox').appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+function showIdError(msg) {
+  $('idError').textContent = msg;
+  $('idError').classList.toggle('hidden', !msg);
+}
+function showFormError(msg) {
+  $('formError').textContent = msg;
+  $('formError').classList.toggle('hidden', !msg);
+}
+
+/* ---------------- Verificación de correo ---------------- */
+async function sendCode() {
+  const email = $('email').value.trim().toLowerCase();
+  if (!email || !$('email').checkValidity()) { showIdError('Escribe un correo válido.'); return; }
+  showIdError('');
+  $('sendCodeBtn').disabled = true; $('resendBtn').disabled = true;
+  try {
+    const r = await api({ action: 'requestCode', email });
+    if (!r.ok) { showIdError(r.error || 'No se pudo enviar el código.'); return; }
+    pendingEmail = email;
+    codeStep = true;
+    $('code').value = '';
+    $('codeHint').textContent = r.message || ('Te enviamos un código a ' + email + '.');
+    renderIdentity();
+    $('code').focus();
+  } catch (err) {
+    console.error(err);
+    showIdError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    $('sendCodeBtn').disabled = false; $('resendBtn').disabled = false;
+  }
+}
+
+async function verifyCode() {
+  const code = $('code').value.trim();
+  if (code.length !== 6) { showIdError('Escribe el código de 6 dígitos.'); return; }
+  showIdError('');
+  $('verifyBtn').disabled = true;
+  try {
+    const r = await api({ action: 'verifyCode', email: pendingEmail, code });
+    if (!r.ok) { showIdError(r.error || 'No se pudo verificar el código.'); return; }
+    session = { token: r.token, email: r.email, admin: r.admin, staff: !!r.staff };
+    saveSession();
+    codeStep = false;
+    renderIdentity();
+    toast('Correo verificado.');
+    await loadDay(true);
+    loadMine();
+    if (tab === 'seats') loadSeats();
+    if (tab === 'today') loadToday();
+  } catch (err) {
+    console.error(err);
+    showIdError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    $('verifyBtn').disabled = false;
+  }
+}
+
+$('sendCodeBtn').addEventListener('click', sendCode);
+$('resendBtn').addEventListener('click', () => { $('email').value = pendingEmail; sendCode(); });
+$('verifyBtn').addEventListener('click', verifyCode);
+$('changeEmailBtn').addEventListener('click', () => { codeStep = false; showIdError(''); renderIdentity(); $('email').focus(); });
+$('logoutBtn').addEventListener('click', async () => { endSession(false); await loadDay(true); });
+$('refreshMine').addEventListener('click', loadMine);
+$('email').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendCode(); } });
+$('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); verifyCode(); } });
+$('code').addEventListener('input', () => { $('code').value = $('code').value.replace(/\D/g, ''); });
+
+/* ---------------- Formulario ---------------- */
+$('date').addEventListener('change', async () => { selectedRoom = null; await loadDay(true); });
+['start', 'duration', 'attendees'].forEach((id) => $(id).addEventListener('input', render));
+$('host').addEventListener('change', updateHostFields);
+$('number').addEventListener('input', () => { $('number').value = $('number').value.replace(/\D/g, ''); });
+
+function resetVisitors() {
+  $('visitor1').value = '';
+  $('visitor2').value = '';
+  $('visitor2Box').classList.add('hidden');
+  if (cfg && !(cfg.agencyHosts || []).includes($('host').value)) $('addVisitor2').classList.remove('hidden');
+}
+$('addVisitor2').addEventListener('click', () => {
+  $('visitor2Box').classList.remove('hidden');
+  $('addVisitor2').classList.add('hidden');
+  $('visitor2').focus();
+});
+$('removeVisitor2').addEventListener('click', () => {
+  $('visitor2').value = '';
+  $('visitor2Box').classList.add('hidden');
+  $('addVisitor2').classList.remove('hidden');
+});
+
+/* ---------------- Cancelar y reagendar ---------------- */
+function findBooking(id) {
+  return [...bookings, ...(mine ? mine.bookings : []), ...(todayData ? todayData.rooms : [])].find((b) => b.id === id);
+}
+
+async function startEdit(b) {
+  if (!session || !cfg) return;
+  if (tab !== 'rooms') setTab('rooms');
+  editing = { id: b.id, roomId: b.roomId, date: b.date };
+  $('detailsBox').classList.add('hidden');
+  $('editBanner').classList.remove('hidden');
+  $('editText').textContent = `Reagendando: ${b.agency ? b.agency + ' / ' : ''}${b.visitor}${b.purpose ? ' · ' + b.purpose : ''}. Elige la nueva fecha, hora y sala.`;
+  $('submitBtn').textContent = 'Guardar cambio';
+  showFormError('');
+
+  $('date').value = b.date;
+  selectedRoom = null;
+  await loadDay(true);
+
+  if ($('start').options.some((o) => o.value === b.start)) $('start').value = b.start;
+  const durs = $('duration').options.map((o) => Number(o.value));
+  const dur = toMin(b.end) - toMin(b.start);
+  const fit = durs.filter((m) => m <= dur);
+  $('duration').value = String(fit.length ? Math.max(...fit) : durs[0]);
+  $('attendees').value = b.attendees || 2;
+  selectedRoom = b.roomId;
+  render();
+  if (window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function stopEdit() {
+  editing = null;
+  $('detailsBox').classList.remove('hidden');
+  $('editBanner').classList.add('hidden');
+  $('submitBtn').textContent = 'Reservar sala';
+  showFormError('');
+  if (cfg) render();
+}
+
+async function submitEdit(range) {
+  if (!session) return showFormError('Tu sesión venció. Verifica tu correo otra vez.');
+  if (!selectedRoom) return showFormError('Elige una sala disponible.');
+
+  submitting = true;
+  $('submitBtn').disabled = true;
+  $('submitBtn').textContent = 'Guardando…';
+  try {
+    const r = await api({
+      action: 'reschedule', token: session.token,
+      id: editing.id, roomId: editing.roomId, date: editing.date,
+      newRoomId: selectedRoom, newDate: $('date').value, newStart: range.start, newDuration: range.dur
+    });
+    if (r.ok) {
+      toast(r.message || 'Reserva actualizada.');
+      if (r.chat && r.chat !== 'OK') toast('La reserva se actualizó, pero el aviso a Chat falló: ' + r.chat, 'error');
+      stopEdit();
+      selectedRoom = null;
+      loadMine();
+    } else if (r.authRequired) {
+      endSession(true);
+      showFormError(r.error || 'Verifica tu correo otra vez.');
+    } else {
+      showFormError(r.error || 'No se pudo guardar el cambio.');
+      if (r.conflict) toast('Esa sala ya está ocupada en ese horario. Elige otra opción.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showFormError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    submitting = false;
+    $('submitBtn').textContent = editing ? 'Guardar cambio' : 'Reservar sala';
+    await loadDay(true);
+  }
+}
+
+async function cancelBooking(b) {
+  if (!session || busyAct) return;
+  const detalle = `${b.visitor}\n${prettyDate(b.date, true)} · ${b.start}–${b.end}\n${roomName(b.roomId)}`;
+  if (!window.confirm('¿Cancelar esta visita?\n\n' + detalle + '\n\nLa sala quedará libre.')) return;
+  busyAct = true;
+  try {
+    const r = await api({ action: 'cancel', token: session.token, id: b.id, roomId: b.roomId, date: b.date });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo cancelar.', 'error'); return; }
+    toast(r.message || 'Reserva cancelada.');
+    if (r.chat && r.chat !== 'OK') toast('La reserva se canceló, pero el aviso a Chat falló: ' + r.chat, 'error');
+    if (editing && editing.id === b.id) stopEdit();
+    await loadDay(true);
+    loadMine();
+    if (tab === 'today') loadToday(true);
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  } finally {
+    busyAct = false;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const btn = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+  if (!btn) return;
+  if (btn.dataset.act === 'seatcancel') { cancelSeat(btn.dataset.id); return; }
+  if (btn.dataset.act === 'seatics') { const sb = findSeat(btn.dataset.id); if (sb) downloadIcs(sb); return; }
+  if (btn.dataset.act === 'closeremove') { removeClosure(btn.dataset.date, btn.dataset.scope); return; }
+  if (btn.dataset.act === 'copyarr') { copyText(btn.dataset.url); return; }
+  if (btn.dataset.act === 'arrive') { const ab = findBooking(btn.dataset.id); if (ab) markArrival(ab); return; }
+  const b = findBooking(btn.dataset.id);
+  if (!b) return;
+  if (btn.dataset.act === 'cancel') cancelBooking(b);
+  else if (btn.dataset.act === 'resched') startEdit(b);
+});
+$('cancelEditBtn').addEventListener('click', async () => { stopEdit(); selectedRoom = null; await loadDay(true); });
+
+$('bookingForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  showFormError('');
+  const range = currentRange();
+  if (editing) return submitEdit(range);
+  const host = $('host').value;
+  const purpose = $('purpose').value;
+  const number = $('number').value.replace(/\D/g, '');
+  const needNumber = (cfg.numberHosts || []).includes(host);
+  const isAgency = (cfg.agencyHosts || []).includes(host);
+  const agency = $('agency').value.trim();
+  const visitors = (isAgency ? [$('visitor1').value.trim()] : [$('visitor1').value.trim(), $('visitor2').value.trim()]).filter(Boolean);
+
+  if (!session) return showFormError('Primero verifica tu correo (arriba del formulario).');
+  if (!selectedRoom) return showFormError('Elige una sala disponible.');
+  if (!host) return showFormError('Elige el host.');
+  if (isAgency && !agency) return showFormError(`Escribe la ${(cfg.agencyLabel || 'inmobiliaria').toLowerCase()}.`);
+  if (!visitors.length) return showFormError(isAgency ? `Escribe el ${(cfg.brokerLabel || 'nombre del broker').toLowerCase()}.` : 'Escribe el nombre de la visita.');
+  if (needNumber && (number.length < 10 || number.length > 15)) return showFormError(`Escribe el ${(cfg.numberLabel || 'número').toLowerCase()} (10 dígitos).`);
+  if (!purpose) return showFormError('Elige el motivo de la reunión.');
+
+  submitting = true;
+  $('submitBtn').disabled = true;
+  $('submitBtn').textContent = 'Reservando…';
+
+  try {
+    const r = await api({
+      action: 'book', token: session.token,
+      date: $('date').value, start: range.start, duration: range.dur,
+      roomId: selectedRoom, host, purpose, visitors, agency: isAgency ? agency : '', number: needNumber ? number : '',
+      attendees: parseInt($('attendees').value, 10) || 1
+    });
+    if (r.ok) {
+      toast(r.message || 'Reserva confirmada.');
+      if (r.chat && r.chat !== 'OK') toast('La reserva se guardó, pero el aviso a Chat falló: ' + r.chat, 'error');
+      try { localStorage.setItem('rs_host', host); } catch (x) {}
+      resetVisitors();
+      $('agency').value = '';
+      $('purpose').value = '';
+      $('number').value = '';
+      selectedRoom = null;
+      loadMine();
+    } else if (r.authRequired) {
+      endSession(true);
+      showFormError(r.error || 'Verifica tu correo para reservar.');
+    } else {
+      showFormError(r.error || 'No se pudo reservar.');
+      if (r.conflict) toast('Alguien acaba de reservar esa sala. Elige otra opción.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showFormError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    submitting = false;
+    $('submitBtn').textContent = 'Reservar sala';
+    await loadDay(true);
+  }
+});
+
+/* ======================================================================
+ *  LUGARES DE TRABAJO (exclusivo equipo Pulppo)
+ * ====================================================================== */
+function addDays(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
+}
+const seatInfo = (n) => ((cfg && cfg.seatMap) ? cfg.seatMap.seats.find((s) => s.n === n) : null) || { n, zone: '' };
+
+function setTab(name) {
+  tab = name;
+  $('roomsView').classList.toggle('hidden', name !== 'rooms');
+  $('seatsView').classList.toggle('hidden', name !== 'seats');
+  $('todayView').classList.toggle('hidden', name !== 'today');
+  $('tabRooms').classList.toggle('tab-on', name === 'rooms');
+  $('tabSeats').classList.toggle('tab-on', name === 'seats');
+  $('tabToday').classList.toggle('tab-on', name === 'today');
+  try { history.replaceState(null, '', name === 'seats' ? '#lugares' : name === 'today' ? '#hoy' : location.pathname + location.search); } catch (e) {}
+  if (name === 'seats') loadSeats();
+  if (name === 'today') { renderTodayGate(); loadToday(); }
+}
+
+function initSeats() {
+  if (!cfg.seatMap) return;
+  $('seatDate').min = cfg.today;
+  $('seatDate').max = addDays(cfg.today, cfg.seatMaxDaysAhead || 60);
+  $('seatDate').value = cfg.today;
+  try {
+    $('seatName').value = localStorage.getItem('rs_seat_name') || '';
+    $('seatAgency').value = localStorage.getItem('rs_seat_agency') || '';
+    $('seatPhone').value = localStorage.getItem('rs_seat_phone') || '';
+  } catch (e) {}
+  $('seatAllDayNote').textContent = `Todo el día es de ${seatOpen() / 60}:00 a ${seatClose() / 60}:00.`;
+  buildSeatTimes();
+  renderSeatGate();
+  renderSeats();
+  if (typeof location !== 'undefined' && location.hash === '#lugares') setTab('seats');
+}
+
+const seatDay = () => $('seatDate').value || cfg.today;
+const seatOpen = () => hoursFor(seatDay(), 'seats').open * 60;
+const seatClose = () => hoursFor(seatDay(), 'seats').close * 60;
+
+function seatRange() {
+  const open = seatOpen(), close = seatClose();
+  if (seatMode === 'day') return { s: open, e: close, allDay: true };
+  const a = $('seatStart').value, b = $('seatEnd').value;
+  if (!a || !b) return null;
+  const s = toMin(a), e = toMin(b);
+  return e > s ? { s, e, allDay: false } : null;
+}
+
+function buildSeatTimes() {
+  const step = cfg.seatStep || 30, open = seatOpen(), close = seatClose();
+  $('seatAllDayNote').textContent = `Todo el día es de ${open / 60}:00 a ${close / 60}:00.`;
+  const nowMin = $('seatDate').value === cfg.today ? nowMinutes() : -1;
+  const keep = $('seatStart').value;
+  const starts = [];
+  for (let m = open; m < close; m += step) if (m + step > nowMin) starts.push(fromMin(m));
+  $('seatStart').innerHTML = starts.length
+    ? starts.map((t) => `<option value="${t}">${t}</option>`).join('')
+    : '<option value="">Sin horarios hoy</option>';
+  if (starts.includes(keep)) $('seatStart').value = keep;
+  else if (starts.includes('09:00')) $('seatStart').value = '09:00';
+  buildSeatEnds();
+}
+
+function buildSeatEnds() {
+  const step = cfg.seatStep || 30, close = seatClose();
+  const keep = $('seatEnd').value;
+  const s = $('seatStart').value ? toMin($('seatStart').value) : close;
+  const ends = [];
+  for (let m = s + step; m <= close; m += step) ends.push(fromMin(m));
+  $('seatEnd').innerHTML = ends.map((t) => `<option value="${t}">${t}</option>`).join('');
+  const dflt = fromMin(Math.min(s + 240, close));
+  if (ends.includes(keep)) $('seatEnd').value = keep;
+  else if (ends.includes(dflt)) $('seatEnd').value = dflt;
+}
+
+function setSeatMode(mode) {
+  seatMode = mode;
+  $('seatModeDay').classList.toggle('seg-on', mode === 'day');
+  $('seatModeHours').classList.toggle('seg-on', mode === 'hours');
+  $('seatHoursBox').classList.toggle('hidden', mode !== 'hours');
+  if (cfg && mode === 'hours') buildSeatTimes();
+  seatError('');
+  if (cfg) renderSeats();
+}
+
+function seatError(msg) {
+  $('seatError').textContent = msg;
+  $('seatError').classList.toggle('hidden', !msg);
+}
+
+function updateSeatsClosedBanner() {
+  const closed = !!(seatsClosed && seatsClosed.closed && session && seatsAllowed);
+  $('seatsClosedBanner').textContent = closed ? '🚫 ' + seatsClosed.reason : '';
+  $('seatsClosedBanner').classList.toggle('hidden', !closed);
+}
+
+function renderSeatGate(msg) {
+  if (msg) seatGateMsg = msg;
+  let text = '';
+  if (!session) text = 'Esta sección es para los brokers de Pulppo. Verifica tu correo (en el recuadro de arriba) para ver los lugares y reservar el tuyo.';
+  else if (seatsAllowed === false) text = seatGateMsg || 'Tu correo no está autorizado para reservar lugares.';
+  else if (seatsAllowed === null) text = 'Cargando los lugares…';
+  $('seatsGate').textContent = text;
+  $('seatsGate').classList.toggle('hidden', !text);
+  $('seatsApp').classList.toggle('hidden', !!text);
+  $('seatMineBox').classList.toggle('hidden', !!text);
+  updateSeatsClosedBanner();
+}
+
+async function loadSeats(silent) {
+  if (!cfg || !CONFIGURED || !cfg.seatMap) return;
+  if (!session) { seatsAllowed = null; renderSeatGate(); return; }
+  try {
+    const r = await api({ action: 'seatsDay', token: session.token, date: $('seatDate').value || cfg.today });
+    if (r.authRequired) { endSession(true); return; }
+    if (r.forbidden) { seatsAllowed = false; seatBookings = []; seatGateMsg = r.error; renderSeatGate(); return; }
+    if (!r.ok) throw new Error(r.error || 'Respuesta inválida');
+    seatsAllowed = true;
+    seatsClosed = r.closed || null;
+    seatBookings = r.bookings;
+    renderSeatGate();
+    renderSeats();
+    if (seatMine === null) loadSeatMine();
+  } catch (err) {
+    console.error(err);
+    if (!silent) toast('No pudimos cargar los lugares. Inténtalo de nuevo.', 'error');
+  }
+}
+
+function seatHit(n, range) {
+  if (!range) return null;
+  return seatBookings.find((b) => b.seat === n && range.s < toMin(b.end) && range.e > toMin(b.start)) || null;
+}
+
+function renderSeats() {
+  if (!cfg || !cfg.seatMap) return;
+  const range = seatRange();
+  const m = cfg.seatMap;
+  if (selectedSeat && seatHit(selectedSeat, range)) selectedSeat = null;
+
+  let svg = `<svg viewBox="0 0 ${m.width} ${m.height}" class="w-full h-auto" role="group" aria-label="Croquis de la oficina con los lugares de trabajo">
+    <defs><pattern id="seatHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#F6D9D9"/><rect width="2.6" height="8" fill="rgba(185,28,28,.32)"/></pattern></defs>
+    <rect x="2" y="2" width="${m.width - 4}" height="${m.height - 4}" rx="18" fill="#FAFBFC" stroke="#CBD5E1" stroke-width="3"/>`;
+  (m.shapes || []).forEach((h) => {
+    svg += `<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="10" fill="${h.fill}" stroke="${h.stroke}" stroke-width="2"/>`;
+    if (h.label) {
+      const rot = h.rot ? ` transform="rotate(${h.rot} ${h.lx} ${h.ly})"` : '';
+      svg += `<text x="${h.lx}" y="${h.ly}" text-anchor="middle" dominant-baseline="central" font-size="${h.lf || 15}" font-weight="700" fill="${h.lc || '#4B7BB0'}" letter-spacing="${h.ls == null ? 3 : h.ls}"${rot}>${esc(h.label)}</text>`;
+    }
+  });
+  (m.texts || []).forEach((t) => {
+    svg += `<text x="${t.x}" y="${t.y}" font-size="15" font-weight="600" fill="#64748B">${esc(t.text)}</text>`;
+  });
+  m.seats.forEach((s) => {
+    const hit = seatHit(s.n, range);
+    const state = hit ? (hit.mine ? 'mine' : 'taken') : (selectedSeat === s.n ? 'selected' : 'free');
+    const label = { free: 'libre', taken: 'ocupado', mine: 'reservado por ti', selected: 'seleccionado' }[state];
+    const who = hit && hit.detail && !hit.mine && hit.name ? ' · ' + hit.name + (hit.agency ? ' (' + hit.agency + ')' : '') : '';
+    svg += `<g class="seat seat-${state}" data-seat="${s.n}" role="button" tabindex="${state === 'taken' ? -1 : 0}" aria-label="Lugar ${s.n}, ${esc(s.zone)}, ${label}">
+      <title>Lugar ${s.n} · ${esc(s.zone)} · ${label}${esc(who)}</title>
+      <circle cx="${s.x}" cy="${s.y}" r="25"/>
+      <text x="${s.x}" y="${s.y}" dy=".35em" text-anchor="middle" font-size="19" font-weight="800">${s.n}</text></g>`;
+  });
+  svg += '</svg>';
+  $('seatMapBox').innerHTML = svg;
+
+  $('seatPick').innerHTML = selectedSeat
+    ? `Lugar <strong>${selectedSeat}</strong> · ${esc(seatInfo(selectedSeat).zone)}`
+    : 'Toca un lugar libre en el croquis.';
+  const free = m.seats.filter((s) => !seatHit(s.n, range)).length;
+  $('seatFree').textContent = range ? `· ${free} de ${m.seats.length} libres` : '';
+  updateSeatsClosedBanner();
+  $('seatSubmit').disabled = !(session && seatsAllowed && selectedSeat && range && !submitting && !(seatsClosed && seatsClosed.closed));
+}
+
+function onSeatClick(e) {
+  const g = e.target && e.target.closest ? e.target.closest('[data-seat]') : null;
+  if (!g) return;
+  const n = Number(g.dataset.seat);
+  const hit = seatHit(n, seatRange());
+  if (hit) {
+    if (hit.mine) toast(`El lugar ${n} ya es tuyo en ese horario.`);
+    else toast(`El lugar ${n} ya está ocupado en ese horario.`, 'error');
+    return;
+  }
+  selectedSeat = selectedSeat === n ? null : n;
+  seatError('');
+  renderSeats();
+}
+
+async function bookSeat() {
+  seatError('');
+  if (!session) return seatError('Primero verifica tu correo (recuadro de arriba).');
+  const range = seatRange();
+  if (!selectedSeat) return seatError('Elige un lugar en el croquis.');
+  if (!range) return seatError('Elige una hora de inicio y una de fin válidas.');
+  const name = $('seatName').value.trim();
+  const agency = $('seatAgency').value.trim();
+  if (!name) return seatError('Escribe tu nombre.');
+  if (!agency) return seatError('Escribe el nombre de tu inmobiliaria.');
+  const phone = $('seatPhone').value.replace(/\D/g, '');
+  if (phone.length < 10 || phone.length > 15) return seatError('Escribe tu teléfono o WhatsApp (10 dígitos).');
+
+  submitting = true;
+  $('seatSubmit').disabled = true;
+  $('seatSubmit').textContent = 'Reservando…';
+  try {
+    const r = await api({
+      action: 'seatBook', token: session.token, seat: selectedSeat, date: $('seatDate').value,
+      allDay: range.allDay, start: $('seatStart').value, end: $('seatEnd').value, name, agency, phone
+    });
+    if (r.ok) {
+      toast(r.message || 'Lugar reservado.');
+      if (r.chat && r.chat !== 'OK') toast('El lugar se reservó, pero el aviso a Chat falló: ' + r.chat, 'error');
+      try { localStorage.setItem('rs_seat_name', name); localStorage.setItem('rs_seat_agency', agency); localStorage.setItem('rs_seat_phone', phone); } catch (e) {}
+      selectedSeat = null;
+      seatMine = null;
+    } else if (r.authRequired) {
+      endSession(true);
+    } else if (r.forbidden) {
+      seatsAllowed = false; seatGateMsg = r.error; renderSeatGate();
+    } else {
+      seatError(r.error || 'No se pudo reservar el lugar.');
+      if (r.conflict) toast('Alguien acaba de tomar ese lugar. Elige otro.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    seatError('No se pudo conectar con el servidor. Inténtalo de nuevo.');
+  } finally {
+    submitting = false;
+    $('seatSubmit').textContent = 'Reservar lugar';
+    await loadSeats(true);
+  }
+}
+
+async function loadSeatMine() {
+  if (!session || !cfg || !cfg.seatMap) return;
+  try {
+    const r = await api({ action: 'seatMine', token: session.token });
+    if (r.authRequired) { endSession(true); return; }
+    if (r.forbidden) { seatsAllowed = false; seatGateMsg = r.error; renderSeatGate(); return; }
+    if (!r.ok) throw new Error(r.error);
+    seatMine = { bookings: r.bookings, admin: r.admin };
+  } catch (err) {
+    console.error(err);
+    seatMine = { bookings: [], admin: false };
+  }
+  renderSeatMine();
+}
+
+function seatCard(b) {
+  const meta = isStaff() ? [b.name, b.agency, b.phone, b.email].filter(Boolean).map(esc) : [];
+  const btn = 'rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold';
+  const actions = [];
+  if (b.mine && b.editable) {
+    actions.push(`<a href="${esc(gcalUrl(b))}" target="_blank" rel="noopener" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Agregar a mi calendario</a>`);
+    actions.push(`<button type="button" data-act="seatics" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">.ics</button>`);
+  }
+  if (b.editable) actions.push(`<button type="button" data-act="seatcancel" data-id="${esc(b.id)}" class="${btn} border-red-200 text-red-700 hover:bg-red-50">Cancelar</button>`);
+  return `
+    <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="font-semibold">Lugar ${b.seat} <span class="font-normal text-slate-500">· ${esc(b.zone)}</span></div>
+        <div class="text-sm text-slate-600 capitalize">${esc(prettyDate(b.date, true))} · ${b.allDay ? 'Todo el día' : esc(b.start) + '–' + esc(b.end)}</div>
+        ${meta.length ? `<div class="text-xs text-slate-500 mt-0.5">${meta.join(' · ')}</div>` : ''}
+      </div>
+      ${actions.length ? `<div class="flex flex-wrap gap-2">${actions.join('')}</div>` : ''}
+    </div>`;
+}
+
+function renderSeatMine() {
+  if (!session) return;
+  $('seatMineTitle').textContent = session.admin ? 'Todos los lugares reservados · próximos días' : 'Mis lugares reservados';
+  if (seatMine === null) { $('seatMineItems').innerHTML = '<p class="text-sm text-slate-500">Cargando…</p>'; return; }
+  $('seatMineItems').innerHTML = seatMine.bookings.length
+    ? seatMine.bookings.map(seatCard).join('')
+    : '<p class="text-sm text-slate-500">Todavía no tienes lugares reservados.</p>';
+}
+
+async function cancelSeat(id) {
+  if (!session || busyAct) return;
+  const b = [...(seatMine ? seatMine.bookings : []), ...seatBookings].find((x) => x.id === id);
+  if (!b) return;
+  const cuando = `${prettyDate(b.date, true)} · ${b.allDay ? 'Todo el día' : b.start + '–' + b.end}`;
+  if (!window.confirm(`¿Cancelar el lugar ${b.seat}?\n\n${cuando}\n\nQuedará libre para otra persona.`)) return;
+  busyAct = true;
+  try {
+    const r = await api({ action: 'seatCancel', token: session.token, id });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo cancelar.', 'error'); return; }
+    toast(r.message || 'Reserva cancelada.');
+    if (r.chat && r.chat !== 'OK') toast('La reserva se canceló, pero el aviso a Chat falló: ' + r.chat, 'error');
+    await loadSeats(true);
+    await loadSeatMine();
+    if (tab === 'today') loadToday(true);
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  } finally {
+    busyAct = false;
+  }
+}
+
+$('tabRooms').addEventListener('click', () => setTab('rooms'));
+$('tabSeats').addEventListener('click', () => setTab('seats'));
+$('seatModeDay').addEventListener('click', () => setSeatMode('day'));
+$('seatModeHours').addEventListener('click', () => setSeatMode('hours'));
+$('seatDate').addEventListener('change', async () => { selectedSeat = null; seatError(''); if (cfg) buildSeatTimes(); await loadSeats(true); });
+$('seatStart').addEventListener('input', () => { buildSeatEnds(); renderSeats(); });
+$('seatEnd').addEventListener('input', renderSeats);
+$('seatPhone').addEventListener('input', () => { $('seatPhone').value = $('seatPhone').value.replace(/\D/g, ''); });
+$('seatMapBox').addEventListener('click', onSeatClick);
+$('seatMapBox').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSeatClick(e); } });
+$('seatSubmit').addEventListener('click', bookSeat);
+$('seatRefreshMine').addEventListener('click', () => { seatMine = null; renderSeatMine(); loadSeatMine(); });
+
+/* ======================================================================
+ *  HOY EN LA OFICINA (recepción y administradores) · DÍAS CERRADOS · CALENDARIO
+ * ====================================================================== */
+const isStaff = () => !!(session && (session.admin || session.staff));
+
+function renderTabs() {
+  $('tabToday').classList.toggle('hidden', !isStaff());
+  if (tab === 'today' && !isStaff()) setTab('rooms');
+}
+
+function initToday() {
+  $('todayDate').value = cfg.today;
+  if (typeof location !== 'undefined' && location.hash === '#hoy' && isStaff()) setTab('today');
+}
+
+function renderTodayGate() {
+  let text = '';
+  if (!isStaff()) text = 'Esta vista es solo para recepción y administradores. Verifica tu correo (en el recuadro de arriba) con una cuenta autorizada.';
+  else if (todayForbidden) text = todayForbidden;
+  else if (!todayData) text = 'Cargando…';
+  $('todayGate').textContent = text;
+  $('todayGate').classList.toggle('hidden', !text);
+  $('todayApp').classList.toggle('hidden', !!text);
+}
+
+async function loadToday(silent) {
+  if (!cfg || !CONFIGURED) return;
+  if (!isStaff()) { renderTodayGate(); return; }
+  try {
+    const r = await api({ action: 'staffDay', token: session.token, date: $('todayDate').value || cfg.today });
+    if (r.authRequired) { endSession(true); return; }
+    if (r.forbidden) { todayForbidden = r.error; todayData = null; renderTodayGate(); return; }
+    if (!r.ok) throw new Error(r.error || 'Respuesta inválida');
+    todayData = r; todayForbidden = '';
+    renderTodayGate();
+    renderToday();
+    if (session.admin && closures === null) loadClosures();
+  } catch (err) {
+    console.error(err);
+    if (!silent) toast('No pudimos cargar "Hoy en la oficina". Inténtalo de nuevo.', 'error');
+  }
+}
+
+function renderToday() {
+  if (!todayData) return;
+  const d = todayData;
+  $('todayTitle').textContent = prettyDate(d.date);
+  const chip = (t) => `<span class="rounded-full bg-slate-100 px-3 py-1 font-semibold">${esc(t)}</span>`;
+  const arrivedN = d.rooms.filter((b) => b.arrived).length;
+  $('todayChips').innerHTML = chip(`Visitas: ${d.rooms.length}`) + (d.rooms.length ? chip(`Ya llegaron: ${arrivedN} de ${d.rooms.length}`) : '') + chip(`Lugares: ${d.seats.length} de ${d.seatTotal}`);
+
+  const msgs = [];
+  if (d.closedRooms.closed && d.closedSeats.closed) msgs.push(d.closedRooms.reason);
+  else {
+    if (d.closedRooms.closed) msgs.push('Salas: ' + d.closedRooms.reason);
+    if (d.closedSeats.closed) msgs.push('Lugares: ' + d.closedSeats.reason);
+  }
+  $('todayClosed').textContent = msgs.length ? '🚫 ' + msgs.join(' · ') : '';
+  $('todayClosed').classList.toggle('hidden', !msgs.length);
+
+  $('todayRooms').innerHTML = d.rooms.length
+    ? d.rooms.map((b) => bookingCard(b, false)).join('')
+    : '<p class="text-sm text-slate-500">No hay visitas reservadas este día.</p>';
+  $('todaySeats').innerHTML = d.seats.length
+    ? d.seats.map(seatCard).join('')
+    : '<p class="text-sm text-slate-500">No hay lugares reservados este día.</p>';
+  $('closuresBox').classList.toggle('hidden', !(session && session.admin));
+}
+
+/* ---------- Días cerrados (administradores) ---------- */
+const scopeLabel = (s) => ({ todo: 'Todo', salas: 'Solo salas', lugares: 'Solo lugares' }[s] || s);
+
+function closeMsg(text, isErr) {
+  const el = $('closeMsg');
+  el.textContent = text || '';
+  el.className = 'mt-3 text-sm rounded-lg px-3 py-2 ' +
+    (isErr ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800') + (text ? '' : ' hidden');
+}
+
+async function loadClosures() {
+  if (!session || !session.admin) return;
+  try {
+    const r = await api({ action: 'closures', token: session.token });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) throw new Error(r.error);
+    closures = r;
+    renderClosures();
+  } catch (err) { console.error(err); }
+}
+
+function renderClosures() {
+  if (!closures) return;
+  $('closuresWeekly').textContent = closures.closedWeekdays.length
+    ? `Cerrado cada semana: ${closures.closedWeekdays.join(', ')} (se cambia en la configuración del script).`
+    : 'No hay días de la semana cerrados.';
+  $('closuresList').innerHTML = closures.closures.length
+    ? closures.closures.map((c) => `
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm">
+          <div><span class="font-semibold capitalize">${esc(prettyDate(c.date, true))}</span>
+            <span class="text-slate-500">· ${esc(scopeLabel(c.scope))}${c.reason ? ' · ' + esc(c.reason) : ''}</span></div>
+          <button type="button" data-act="closeremove" data-date="${esc(c.date)}" data-scope="${esc(c.scope)}"
+                  class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:border-teal">Reabrir</button>
+        </div>`).join('')
+    : '<p class="text-sm text-slate-500">No hay días cerrados próximos.</p>';
+}
+
+async function addClosure() {
+  const date = $('closeDate').value;
+  if (!date) return closeMsg('Elige la fecha que quieres cerrar.', true);
+  closeMsg('');
+  $('closeAddBtn').disabled = true;
+  try {
+    const r = await api({ action: 'closureAdd', token: session.token, date, reason: $('closeReason').value.trim(), scope: $('closeScope').value });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) return closeMsg(r.error || 'No se pudo cerrar el día.', true);
+    let msg = r.message;
+    const n = r.existing ? r.existing.rooms + r.existing.seats : 0;
+    if (n) msg += ` Ojo: ese día ya tiene ${r.existing.rooms} visita(s) y ${r.existing.seats} lugar(es) reservados. Se conservan; si hace falta, cancélalos desde esta pestaña.`;
+    closeMsg(msg, false);
+    $('closeReason').value = '';
+    await loadClosures();
+    loadDay(true);
+    if (tab === 'today') loadToday(true);
+  } catch (err) {
+    console.error(err);
+    closeMsg('No se pudo conectar con el servidor. Inténtalo de nuevo.', true);
+  } finally {
+    $('closeAddBtn').disabled = false;
+  }
+}
+
+async function removeClosure(date, scope) {
+  if (!session || !session.admin) return;
+  if (!window.confirm(`¿Reabrir el ${prettyDate(date, true)}?\n\nVolverá a poder reservarse.`)) return;
+  try {
+    const r = await api({ action: 'closureRemove', token: session.token, date, scope });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo reabrir el día.', 'error'); return; }
+    toast(r.message || 'Día reabierto.');
+    await loadClosures();
+    loadDay(true);
+    if (tab === 'today') loadToday(true);
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  }
+}
+
+/* ---------- Agregar un lugar al calendario (Google Calendar y .ics) ---------- */
+const findSeat = (id) => [...(seatMine ? seatMine.bookings : []), ...seatBookings, ...(todayData ? todayData.seats : [])].find((x) => x.id === id);
+
+function gcalUrl(b) {
+  const d = b.date.replace(/-/g, '');
+  const f = (t) => d + 'T' + t.replace(':', '') + '00';
+  const place = cfg && cfg.officeName ? `${cfg.officeName} · ${cfg.officeAddress}` : '';
   return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
-    '&text=' + encodeURIComponent(title) +
-    '&dates=' + f(start) + '/' + f(end) +
-    '&ctz=' + encodeURIComponent(CONFIG.TIMEZONE) +
-    '&location=' + encodeURIComponent(CONFIG.OFFICE_NAME + ' · ' + CONFIG.OFFICE_ADDRESS) +
-    '&details=' + encodeURIComponent(details || '');
+    '&text=' + encodeURIComponent('Lugar de trabajo ' + b.seat + (cfg && cfg.officeName ? ' · ' + cfg.officeName : '')) +
+    '&dates=' + f(b.start) + '/' + f(b.end) +
+    '&ctz=' + encodeURIComponent((cfg && cfg.timezone) || 'America/Mexico_City') +
+    '&location=' + encodeURIComponent(place) +
+    '&details=' + encodeURIComponent('Lugar ' + b.seat + ' (' + b.zone + ')');
 }
 
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+function seatIcs(b) {
+  const d = b.date.replace(/-/g, '');
+  const t = (x) => x.replace(':', '') + '00';
+  const tz = (cfg && cfg.timezone) || 'America/Mexico_City';
+  const place = cfg && cfg.officeName ? `${cfg.officeName} · ${cfg.officeAddress}` : '';
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const icsEsc = (x) => String(x).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Reserva de salas//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VTIMEZONE', 'TZID:' + tz, 'BEGIN:STANDARD', 'DTSTART:19700101T000000', 'TZOFFSETFROM:-0600', 'TZOFFSETTO:-0600', 'TZNAME:CST', 'END:STANDARD', 'END:VTIMEZONE',
+    'BEGIN:VEVENT', 'UID:' + b.id + '@reservas-salas', 'DTSTAMP:' + stamp,
+    'DTSTART;TZID=' + tz + ':' + d + 'T' + t(b.start),
+    'DTEND;TZID=' + tz + ':' + d + 'T' + t(b.end),
+    'SUMMARY:' + icsEsc('Lugar de trabajo ' + b.seat),
+    'LOCATION:' + icsEsc(place),
+    'DESCRIPTION:' + icsEsc('Lugar ' + b.seat + ' (' + b.zone + ')'),
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
 }
 
-function fmt_(d, pattern) { return Utilities.formatDate(d, CONFIG.TIMEZONE, pattern); }
-function today_() { return fmt_(new Date(), 'yyyy-MM-dd'); }
-function isDate_(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')); }
-function isTime_(s) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(s || '')); }
-function isEmail_(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '')); }
-function normEmail_(s) { return String(s || '').trim().toLowerCase(); }
-function toMin_(hhmm) { const p = String(hhmm).split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); }
-function pad_(n) { return (n < 10 ? '0' : '') + n; }
-function fromMin_(m) { return pad_(Math.floor(m / 60)) + ':' + pad_(m % 60); }
-
-function humanDuration_(min) {
-  if (min % 60 === 0) return (min / 60) + (min === 60 ? ' hora' : ' horas');
-  return min + ' minutos';
+function downloadIcs(b) {
+  try {
+    const blob = new Blob([seatIcs(b)], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `lugar-${b.seat}-${b.date}.ics`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo crear el archivo de calendario.', 'error');
+  }
 }
 
-/** "andrea.ruiz@tuhabi.mx" → "Andrea Ruiz" */
-function schedulerName_(email) {
-  if (!email) return '';
-  return String(email).split('@')[0].split(/[._-]+/).filter(Boolean).map(function (w) {
-    return w.charAt(0).toUpperCase() + w.slice(1);
-  }).join(' ');
+$('tabToday').addEventListener('click', () => setTab('today'));
+$('todayDate').addEventListener('change', () => loadToday());
+$('todayPrev').addEventListener('click', () => { $('todayDate').value = addDays($('todayDate').value || cfg.today, -1); loadToday(); });
+$('todayNext').addEventListener('click', () => { $('todayDate').value = addDays($('todayDate').value || cfg.today, 1); loadToday(); });
+$('todayNow').addEventListener('click', () => { $('todayDate').value = cfg.today; loadToday(); });
+$('todayPrint').addEventListener('click', () => { if (window.print) window.print(); });
+$('closeAddBtn').addEventListener('click', addClosure);
+
+/* ======================================================================
+ *  LLEGADA A RECEPCIÓN
+ *  - La visita abre su enlace (#llegada=...) en el celular y toca "Ya llegué".
+ *  - Recepción / administradores pueden marcar la llegada desde "Hoy en la oficina".
+ * ====================================================================== */
+const ARRIVAL_PREFIX = '#llegada=';
+const isArrivalMode = () => typeof location !== 'undefined' && String(location.hash || '').startsWith(ARRIVAL_PREFIX);
+let arrivalToken = '';
+
+async function copyText(text) {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    toast('Enlace copiado. Compártelo con tu visita para cuando llegue.');
+  } catch (err) {
+    console.error(err);
+    window.prompt('Copia este enlace y compártelo con tu visita:', text);
+  }
 }
 
-function spanishDate_(iso) {
-  const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  const p = iso.split('-');
-  const d = new Date(+p[0], +p[1] - 1, +p[2]);
-  return days[d.getDay()] + ' ' + (+p[2]) + ' de ' + months[+p[1] - 1] + ' de ' + p[0];
+async function markArrival(b) {
+  if (!session || busyAct) return;
+  const ask = isStaff() ? `¿Marcar que ya llegó ${b.visitor}?\n\nSe avisará en el chat.` : `¿Avisar que ya llegó la visita?\n\n${b.visitor} · ${b.start}–${b.end} · ${roomName(b.roomId)}\n\nAvisamos al equipo para que baje a recepción por ellos.`;
+  if (!window.confirm(ask)) return;
+  busyAct = true;
+  try {
+    const r = await api({ action: 'arrivalMark', token: session.token, roomId: b.roomId, date: b.date, id: b.id });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo marcar la llegada.', 'error'); return; }
+    toast(r.already ? r.message : (isStaff() ? 'Llegada marcada. Ya se avisó.' : 'Listo, ya avisamos al equipo. Van a bajar a recepción por la visita.'));
+    if (r.chat && r.chat !== 'OK') toast('Se marcó, pero el aviso a Chat falló: ' + r.chat, 'error');
+    await loadDay(true);
+    if (tab === 'today') loadToday(true);
+    loadMine();
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  } finally {
+    busyAct = false;
+  }
 }
 
-function escHtml_(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function arrivalMsg(text, ok) {
+  const el = $('arrivalMsg');
+  el.textContent = text || '';
+  el.className = 'mt-5 rounded-xl px-4 py-3 text-sm font-semibold ' + (ok ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-red-50 border border-red-200 text-red-800') + (text ? '' : ' hidden');
 }
 
-/** Limpia texto y evita inyección de fórmulas en Sheets (=, +, -, @) */
-function clean_(s, max) {
-  s = String(s || '').replace(/\s+/g, ' ').trim().slice(0, max || 100);
-  return /^[=+\-@]/.test(s) ? "'" + s : s;
+function renderArrival(r) {
+  const btn = $('arrivalBtn');
+  const hide = (el, on) => el.classList.toggle('hidden', on);
+  arrivalMsg('');
+  if (!r.ok) {
+    $('arrivalTitle').textContent = 'Enlace no válido';
+    $('arrivalDetail').textContent = r.error || 'Pide a quien agendó tu visita que te comparta el enlace otra vez.';
+    hide(btn, true); hide($('arrivalHint'), true);
+    return;
+  }
+  $('arrivalOffice').textContent = r.officeName;
+  $('arrivalAddr').textContent = r.officeAddress;
+  $('arrivalDetail').innerHTML = `${esc(r.visitor)}<br><span class="text-sm">Cita: ${esc(r.start)}–${esc(r.end)} · ${esc(r.room)}</span>`;
+  if (r.arrived) {
+    $('arrivalTitle').textContent = '¡Listo!';
+    arrivalMsg(`Ya avisamos a recepción a las ${r.arrived}. En un momento bajan por ti.`, true);
+    hide(btn, true); hide($('arrivalHint'), true);
+  } else if (r.state === 'early') {
+    $('arrivalTitle').textContent = 'Todavía es temprano';
+    const when = r.opensOn && r.opensOn !== r.today ? `el ${prettyDate(r.opensOn)} ` : '';
+    arrivalMsg(`Podrás avisar que llegaste ${when}desde las ${r.opensAt}.`, false);
+    hide(btn, false); btn.disabled = true; hide($('arrivalHint'), true);
+  } else if (r.state === 'late') {
+    $('arrivalTitle').textContent = 'Esta visita ya terminó';
+    hide(btn, true); hide($('arrivalHint'), true);
+  } else {
+    $('arrivalTitle').textContent = 'Bienvenido(a)';
+    hide(btn, false); btn.disabled = false; hide($('arrivalHint'), false);
+  }
 }
+
+async function initArrival() {
+  if (document.body && document.body.classList) document.body.classList.add('arrival-mode');
+  $('arrivalView').classList.remove('hidden');
+  arrivalToken = String(location.hash).slice(ARRIVAL_PREFIX.length);
+  try {
+    renderArrival(await api({ action: 'arrivalInfo', arrival: arrivalToken }));
+  } catch (err) {
+    console.error(err);
+    $('arrivalTitle').textContent = 'No pudimos conectar';
+    $('arrivalDetail').textContent = 'Revisa tu internet e inténtalo de nuevo.';
+  }
+}
+
+$('arrivalBtn').addEventListener('click', async () => {
+  const btn = $('arrivalBtn');
+  btn.disabled = true;
+  btn.textContent = 'Avisando…';
+  try {
+    const r = await api({ action: 'arrivalConfirm', arrival: arrivalToken });
+    if (r.ok) {
+      $('arrivalTitle').textContent = '¡Listo!';
+      arrivalMsg(r.already ? `Ya habíamos avisado a recepción a las ${r.arrivedAt}.` : 'Ya avisamos a recepción. En un momento bajan por ti.', true);
+      btn.classList.add('hidden'); $('arrivalHint').classList.add('hidden');
+    } else {
+      arrivalMsg(r.error || 'No pudimos avisar. Inténtalo de nuevo.', false);
+      btn.disabled = !!(r.early);
+    }
+  } catch (err) {
+    console.error(err);
+    arrivalMsg('No pudimos conectar. Revisa tu internet e inténtalo de nuevo.', false);
+    btn.disabled = false;
+  } finally {
+    btn.textContent = 'Ya llegué a la oficina';
+  }
+});
+
+/* Actualiza cada 30 s mientras la pestaña está visible */
+setInterval(() => { if (isArrivalMode()) return; if (!document.hidden && !submitting) { loadDay(true); if (tab === 'seats') loadSeats(true); if (tab === 'today') loadToday(true); } }, 30000);
+document.addEventListener('visibilitychange', () => { if (!isArrivalMode() && !document.hidden) loadDay(true); });
+
+loadSession();
+if (isArrivalMode()) {
+  initArrival();
+} else {
+  renderIdentity();
+  renderMine();
+  loadDay(false);
+}
+</script>
+</body>
+</html>
