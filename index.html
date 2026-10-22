@@ -80,6 +80,9 @@
     body { background: #fff; }
     #todayView section, #todayView .rounded-2xl { box-shadow: none; }
   }
+  /* Pantalla de llegada: solo se ve el botón */
+  .arrival-mode nav[role=tablist], .arrival-mode #identityWrap, .arrival-mode #roomsView, .arrival-mode #seatsView,
+  .arrival-mode #todayView, .arrival-mode #officeNote, .arrival-mode [aria-live="polite"] { display: none !important; }
   .seat:focus { outline: none; }
   .seat:focus-visible circle { stroke: #0F1F2E; stroke-width: 4; }
 </style>
@@ -430,8 +433,21 @@
     </div>
   </div>
 
+  <!-- ============ LLEGADA: la visita abre su enlace en el celular ============ -->
+  <div id="arrivalView" class="hidden mx-auto max-w-md">
+    <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 text-center">
+      <p id="arrivalOffice" class="text-sm font-semibold text-slate-500"></p>
+      <h2 id="arrivalTitle" class="mt-1 text-2xl font-extrabold">Un momento…</h2>
+      <p id="arrivalDetail" class="mt-3 text-slate-600"></p>
+      <p id="arrivalMsg" class="hidden mt-5 rounded-xl px-4 py-3 text-sm font-semibold"></p>
+      <button type="button" id="arrivalBtn" class="hidden mt-6 w-full rounded-2xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-lg font-bold py-4">Ya llegué a la oficina</button>
+      <p id="arrivalHint" class="hidden mt-4 text-xs text-slate-500">Al tocar el botón avisamos a recepción para que bajen por ti.</p>
+      <p id="arrivalAddr" class="mt-5 text-xs text-slate-500"></p>
+    </div>
+  </div>
+
   <p id="officeNote" class="mt-10 text-center text-sm font-semibold text-slate-600">Horario de trabajo de la oficina: lunes a viernes de 7:00 a 20:00 h · sábados de 9:00 a 15:00 h · domingos cerrado.</p>
-  <p class="mt-1 text-center text-xs text-slate-400">Versión 2026-10-16 · h</p>
+  <p class="mt-1 text-center text-xs text-slate-400">Versión 2026-10-16 · i</p>
 </div>
 
 <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
@@ -794,6 +810,17 @@ function bookingCard(b, withDate) {
   if (b.number) meta.push((cfg && cfg.numberLabel ? esc(cfg.numberLabel) : 'N.º') + ': ' + esc(b.number));
   if (b.schedulerEmail) meta.push('Agenda: ' + esc(b.schedulerEmail));
   else if (b.scheduler && !b.mine) meta.push('Agenda: ' + esc(b.scheduler));
+
+  const btn = 'rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold';
+  const actions = [];
+  if (b.canMarkArrival && !b.arrived) actions.push(`<button type="button" data-act="arrive" data-id="${esc(b.id)}" class="${btn} border-emerald-300 text-emerald-800 hover:bg-emerald-50">🚪 Marcar llegada</button>`);
+  if (b.arrivalUrl) actions.push(`<button type="button" data-act="copyarr" data-url="${esc(b.arrivalUrl)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Copiar enlace de llegada</button>`);
+  if (b.editable) {
+    actions.push(`<button type="button" data-act="resched" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Reagendar</button>`);
+    actions.push(`<button type="button" data-act="cancel" data-id="${esc(b.id)}" class="${btn} border-red-200 text-red-700 hover:bg-red-50">Cancelar</button>`);
+  }
+  const arrived = b.arrived ? `<div class="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">✅ Llegó a las ${esc(b.arrived)}</div>` : '';
+
   return `
     <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-start gap-x-4 gap-y-1">
       <div class="w-32 shrink-0">
@@ -805,11 +832,8 @@ function bookingCard(b, withDate) {
         <div class="font-semibold">${b.agency ? esc(b.agency) + ' · ' : ''}${esc(b.visitor)}</div>
         <div class="text-sm text-slate-600">${esc(b.purpose || 'Sin motivo indicado')}</div>
         <div class="text-xs text-slate-500 mt-0.5">${meta.join(' · ')}</div>
-        ${b.editable ? `
-        <div class="flex gap-2 mt-2">
-          <button type="button" data-act="resched" data-id="${esc(b.id)}" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:border-teal hover:text-teal-dark">Reagendar</button>
-          <button type="button" data-act="cancel" data-id="${esc(b.id)}" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Cancelar</button>
-        </div>` : ''}
+        ${arrived}
+        ${actions.length ? `<div class="flex flex-wrap gap-2 mt-2">${actions.join('')}</div>` : ''}
       </div>
     </div>`;
 }
@@ -1044,6 +1068,8 @@ document.addEventListener('click', (e) => {
   if (btn.dataset.act === 'seatcancel') { cancelSeat(btn.dataset.id); return; }
   if (btn.dataset.act === 'seatics') { const sb = findSeat(btn.dataset.id); if (sb) downloadIcs(sb); return; }
   if (btn.dataset.act === 'closeremove') { removeClosure(btn.dataset.date, btn.dataset.scope); return; }
+  if (btn.dataset.act === 'copyarr') { copyText(btn.dataset.url); return; }
+  if (btn.dataset.act === 'arrive') { const ab = findBooking(btn.dataset.id); if (ab) markArrival(ab); return; }
   const b = findBooking(btn.dataset.id);
   if (!b) return;
   if (btn.dataset.act === 'cancel') cancelBooking(b);
@@ -1479,7 +1505,8 @@ function renderToday() {
   const d = todayData;
   $('todayTitle').textContent = prettyDate(d.date);
   const chip = (t) => `<span class="rounded-full bg-slate-100 px-3 py-1 font-semibold">${esc(t)}</span>`;
-  $('todayChips').innerHTML = chip(`Visitas: ${d.rooms.length}`) + chip(`Lugares: ${d.seats.length} de ${d.seatTotal}`);
+  const arrivedN = d.rooms.filter((b) => b.arrived).length;
+  $('todayChips').innerHTML = chip(`Visitas: ${d.rooms.length}`) + (d.rooms.length ? chip(`Ya llegaron: ${arrivedN} de ${d.rooms.length}`) : '') + chip(`Lugares: ${d.seats.length} de ${d.seatTotal}`);
 
   const msgs = [];
   if (d.closedRooms.closed && d.closedSeats.closed) msgs.push(d.closedRooms.reason);
@@ -1635,14 +1662,136 @@ $('todayNow').addEventListener('click', () => { $('todayDate').value = cfg.today
 $('todayPrint').addEventListener('click', () => { if (window.print) window.print(); });
 $('closeAddBtn').addEventListener('click', addClosure);
 
+/* ======================================================================
+ *  LLEGADA A RECEPCIÓN
+ *  - La visita abre su enlace (#llegada=...) en el celular y toca "Ya llegué".
+ *  - Recepción / administradores pueden marcar la llegada desde "Hoy en la oficina".
+ * ====================================================================== */
+const ARRIVAL_PREFIX = '#llegada=';
+const isArrivalMode = () => typeof location !== 'undefined' && String(location.hash || '').startsWith(ARRIVAL_PREFIX);
+let arrivalToken = '';
+
+async function copyText(text) {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    toast('Enlace copiado. Compártelo con tu visita para cuando llegue.');
+  } catch (err) {
+    console.error(err);
+    window.prompt('Copia este enlace y compártelo con tu visita:', text);
+  }
+}
+
+async function markArrival(b) {
+  if (!session || busyAct) return;
+  if (!window.confirm(`¿Marcar que ya llegó ${b.visitor}?\n\nSe avisará en el chat.`)) return;
+  busyAct = true;
+  try {
+    const r = await api({ action: 'arrivalMark', token: session.token, roomId: b.roomId, date: b.date, id: b.id });
+    if (r.authRequired) { endSession(true); return; }
+    if (!r.ok) { toast(r.error || 'No se pudo marcar la llegada.', 'error'); return; }
+    toast(r.already ? r.message : 'Llegada marcada. Ya se avisó.');
+    if (r.chat && r.chat !== 'OK') toast('Se marcó, pero el aviso a Chat falló: ' + r.chat, 'error');
+    await loadDay(true);
+    if (tab === 'today') loadToday(true);
+    loadMine();
+  } catch (err) {
+    console.error(err);
+    toast('No se pudo conectar con el servidor. Inténtalo de nuevo.', 'error');
+  } finally {
+    busyAct = false;
+  }
+}
+
+function arrivalMsg(text, ok) {
+  const el = $('arrivalMsg');
+  el.textContent = text || '';
+  el.className = 'mt-5 rounded-xl px-4 py-3 text-sm font-semibold ' + (ok ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-red-50 border border-red-200 text-red-800') + (text ? '' : ' hidden');
+}
+
+function renderArrival(r) {
+  const btn = $('arrivalBtn');
+  const hide = (el, on) => el.classList.toggle('hidden', on);
+  arrivalMsg('');
+  if (!r.ok) {
+    $('arrivalTitle').textContent = 'Enlace no válido';
+    $('arrivalDetail').textContent = r.error || 'Pide a quien agendó tu visita que te comparta el enlace otra vez.';
+    hide(btn, true); hide($('arrivalHint'), true);
+    return;
+  }
+  $('arrivalOffice').textContent = r.officeName;
+  $('arrivalAddr').textContent = r.officeAddress;
+  $('arrivalDetail').innerHTML = `${esc(r.visitor)}<br><span class="text-sm">Cita: ${esc(r.start)}–${esc(r.end)} · ${esc(r.room)}</span>`;
+  if (r.arrived) {
+    $('arrivalTitle').textContent = '¡Listo!';
+    arrivalMsg(`Ya avisamos a recepción a las ${r.arrived}. En un momento bajan por ti.`, true);
+    hide(btn, true); hide($('arrivalHint'), true);
+  } else if (r.state === 'early') {
+    $('arrivalTitle').textContent = 'Todavía es temprano';
+    const when = r.opensOn && r.opensOn !== r.today ? `el ${prettyDate(r.opensOn)} ` : '';
+    arrivalMsg(`Podrás avisar que llegaste ${when}desde las ${r.opensAt}.`, false);
+    hide(btn, false); btn.disabled = true; hide($('arrivalHint'), true);
+  } else if (r.state === 'late') {
+    $('arrivalTitle').textContent = 'Esta visita ya terminó';
+    hide(btn, true); hide($('arrivalHint'), true);
+  } else {
+    $('arrivalTitle').textContent = 'Bienvenido(a)';
+    hide(btn, false); btn.disabled = false; hide($('arrivalHint'), false);
+  }
+}
+
+async function initArrival() {
+  if (document.body && document.body.classList) document.body.classList.add('arrival-mode');
+  $('arrivalView').classList.remove('hidden');
+  arrivalToken = String(location.hash).slice(ARRIVAL_PREFIX.length);
+  try {
+    renderArrival(await api({ action: 'arrivalInfo', arrival: arrivalToken }));
+  } catch (err) {
+    console.error(err);
+    $('arrivalTitle').textContent = 'No pudimos conectar';
+    $('arrivalDetail').textContent = 'Revisa tu internet e inténtalo de nuevo.';
+  }
+}
+
+$('arrivalBtn').addEventListener('click', async () => {
+  const btn = $('arrivalBtn');
+  btn.disabled = true;
+  btn.textContent = 'Avisando…';
+  try {
+    const r = await api({ action: 'arrivalConfirm', arrival: arrivalToken });
+    if (r.ok) {
+      $('arrivalTitle').textContent = '¡Listo!';
+      arrivalMsg(r.already ? `Ya habíamos avisado a recepción a las ${r.arrivedAt}.` : 'Ya avisamos a recepción. En un momento bajan por ti.', true);
+      btn.classList.add('hidden'); $('arrivalHint').classList.add('hidden');
+    } else {
+      arrivalMsg(r.error || 'No pudimos avisar. Inténtalo de nuevo.', false);
+      btn.disabled = !!(r.early);
+    }
+  } catch (err) {
+    console.error(err);
+    arrivalMsg('No pudimos conectar. Revisa tu internet e inténtalo de nuevo.', false);
+    btn.disabled = false;
+  } finally {
+    btn.textContent = 'Ya llegué a la oficina';
+  }
+});
+
 /* Actualiza cada 30 s mientras la pestaña está visible */
-setInterval(() => { if (!document.hidden && !submitting) { loadDay(true); if (tab === 'seats') loadSeats(true); if (tab === 'today') loadToday(true); } }, 30000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) loadDay(true); });
+setInterval(() => { if (isArrivalMode()) return; if (!document.hidden && !submitting) { loadDay(true); if (tab === 'seats') loadSeats(true); if (tab === 'today') loadToday(true); } }, 30000);
+document.addEventListener('visibilitychange', () => { if (!isArrivalMode() && !document.hidden) loadDay(true); });
 
 loadSession();
-renderIdentity();
-renderMine();
-loadDay(false);
+if (isArrivalMode()) {
+  initArrival();
+} else {
+  renderIdentity();
+  renderMine();
+  loadDay(false);
+}
 </script>
 </body>
 </html>
