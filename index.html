@@ -17,8 +17,11 @@
       extend: {
         fontFamily: { sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
         colors: {
-          ink:  '#0F1F2E',
-          teal: { DEFAULT: '#0B6E6E', dark: '#085555', soft: '#D8EEEC' }
+          ink: '#212322',                                                  /* Soft Black */
+          py:  { DEFAULT: '#F6BE00', dark: '#D9A600', soft: '#FFF6D6' },   /* Yellow */
+          sea: { DEFAULT: '#529999', dark: '#3D7A7A', soft: '#E4F0F0' },   /* Sea green */
+          rd:  { DEFAULT: '#A52003', soft: '#FBEAE6' },                    /* Red */
+          gr:  { DEFAULT: '#D0D3D4', soft: '#F2F3F3' }                     /* Gray */
         }
       }
     }
@@ -26,55 +29,55 @@
 </script>
 
 <style>
-  body { background: #EDF0F3; color: #0F1F2E; }
+  body { background: #F2F3F3; color: #212322; }
   .field {
-    width: 100%; border: 1px solid #cbd5e1; border-radius: .5rem; background: #fff;
-    padding: .625rem .75rem; color: #0F1F2E;
+    width: 100%; border: 1px solid #D0D3D4; border-radius: .5rem; background: #fff;
+    padding: .625rem .75rem; color: #212322;
   }
-  .field:focus-visible { outline: 2px solid #0B6E6E; outline-offset: 0; }
+  .field:focus-visible { outline: 2px solid #212322; outline-offset: 0; }
   /* Línea de tiempo: libre (verde) vs ocupada (rojo rayado) vs tu reserva (azul) */
   .track {
-    background-color: #E7F5EA;
-    border: 1px solid #BFE0C7;
-    background-image: linear-gradient(to right, rgba(27,127,59,.16) 1px, transparent 1px);
+    background-color: #E4F0F0;
+    border: 1px solid #B5D3D3;
+    background-image: linear-gradient(to right, rgba(82,153,153,.28) 1px, transparent 1px);
   }
-  .free-swatch { background-color: #E7F5EA; border: 1px solid #BFE0C7; }
+  .free-swatch { background-color: #E4F0F0; border: 1px solid #B5D3D3; }
   .hatch {
-    background-color: #F6D9D9;
-    background-image: repeating-linear-gradient(135deg, rgba(185,28,28,.28) 0 2px, transparent 2px 8px);
-    border-color: #D99A9A;
-    color: #7F1D1D;
+    background-color: #F8DDD6;
+    background-image: repeating-linear-gradient(135deg, rgba(165,32,3,.30) 0 2px, transparent 2px 8px);
+    border-color: #D9937F;
+    color: #A52003;
   }
-  .mine-block { background-color: #DCE6FB; border-color: #4F74D0; color: #1F3A8A; }
-  .mine-card { border-color: #4F74D0; background-color: #F0F4FD; }
+  .mine-block { background-color: #212322; border-color: #212322; color: #fff; }
+  .mine-card { border-color: #F6BE00; background-color: #FFFBEA; }
   .toast-in { animation: toast .25s ease-out; }
   @keyframes toast { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   .pulse-dot { animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
   @media (prefers-reduced-motion: reduce) { .toast-in, .pulse-dot { animation: none; } }
-  button:focus-visible { outline: 2px solid #0B6E6E; outline-offset: 2px; }
+  button:focus-visible { outline: 2px solid #212322; outline-offset: 2px; }
   /* Pestañas y selector Todo el día / Por horas */
   .tab-btn { padding: .6rem 1rem; border-radius: .75rem; font-weight: 700; font-size: .9rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
-  .tab-btn:hover { border-color: #0B6E6E; }
-  .tab-on { background: #0F1F2E; border-color: #0F1F2E; color: #fff; }
+  .tab-btn:hover { border-color: #F6BE00; }
+  .tab-on { background: #212322; border-color: #212322; color: #fff; }
   .seg-btn { padding: .6rem .75rem; border-radius: .625rem; font-weight: 600; font-size: .875rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
-  .seg-on { background: #D8EEEC; border-color: #0B6E6E; color: #085555; }
+  .seg-on { background: #FFF6D6; border-color: #F6BE00; color: #212322; }
   /* Croquis de lugares */
   .seat circle { stroke-width: 3; }
   .seat text { pointer-events: none; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; }
   .seat-free { cursor: pointer; }
-  .seat-free circle { fill: #E7F5EA; stroke: #4CAF72; }
-  .seat-free text { fill: #166534; }
-  .seat-free:hover circle { fill: #CDEBD4; }
+  .seat-free circle { fill: #E4F0F0; stroke: #529999; }
+  .seat-free text { fill: #2F6B6B; }
+  .seat-free:hover circle { fill: #CFE5E5; }
   .seat-taken { cursor: not-allowed; }
-  .seat-taken circle { fill: url(#seatHatch); stroke: #D99A9A; }
-  .seat-taken text { fill: #7F1D1D; }
+  .seat-taken circle { fill: url(#seatHatch); stroke: #D9937F; }
+  .seat-taken text { fill: #A52003; }
   .seat-mine { cursor: default; }
-  .seat-mine circle { fill: #DCE6FB; stroke: #4F74D0; }
-  .seat-mine text { fill: #1F3A8A; }
+  .seat-mine circle { fill: #212322; stroke: #212322; }
+  .seat-mine text { fill: #fff; }
   .seat-selected { cursor: pointer; }
-  .seat-selected circle { fill: #0B6E6E; stroke: #085555; }
-  .seat-selected text { fill: #fff; }
+  .seat-selected circle { fill: #F6BE00; stroke: #D9A600; }
+  .seat-selected text { fill: #212322; }
   @media print {
     nav[role=tablist], #identityWrap, #toastBox, #roomsView, #seatsView, #officeNote, .no-print { display: none !important; }
     body { background: #fff; }
@@ -84,7 +87,7 @@
   .arrival-mode nav[role=tablist], .arrival-mode #identityWrap, .arrival-mode #roomsView, .arrival-mode #seatsView,
   .arrival-mode #todayView, .arrival-mode #officeNote, .arrival-mode #versionNote, .arrival-mode [aria-live="polite"] { display: none !important; }
   .seat:focus { outline: none; }
-  .seat:focus-visible circle { stroke: #0F1F2E; stroke-width: 4; }
+  .seat:focus-visible circle { stroke: #212322; stroke-width: 4; }
 </style>
 </head>
 
@@ -107,19 +110,19 @@
     <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Reserva de salas</h1>
     <a href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Paseo+de+la+Reforma+333%2C+Ju%C3%A1rez%2C+Cuauht%C3%A9moc%2C+06500+Ciudad+de+M%C3%A9xico"
        target="_blank" rel="noopener"
-       class="mt-1 inline-flex items-start gap-1.5 text-sm text-slate-600 hover:text-teal-dark">
+       class="mt-1 inline-flex items-start gap-1.5 text-sm text-slate-600 hover:text-ink">
       <svg class="w-4 h-4 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
       <span>Av. P.º de la Reforma 333-Piso 2, Juárez, Cuauhtémoc, 06500 Ciudad de México, CDMX</span>
     </a>
   </header>
 
-  <div id="configBanner" class="hidden mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+  <div id="configBanner" class="hidden mb-6 rounded-xl border border-py bg-py-soft px-4 py-3 text-sm text-ink">
     Falta conectar la página: pega la URL de tu Web App en <code>API_URL</code> (al final de este archivo).
   </div>
 
   <nav class="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Secciones">
     <button type="button" id="tabRooms" role="tab" class="tab-btn tab-on">Salas de reunión</button>
-    <button type="button" id="tabSeats" role="tab" class="tab-btn">Lugares de trabajo <span class="ml-1 rounded-full bg-teal-soft text-teal-dark text-[11px] font-bold px-2 py-0.5">Pulppo</span></button>
+    <button type="button" id="tabSeats" role="tab" class="tab-btn">Lugares de trabajo <span class="ml-1 rounded-full bg-py-soft text-ink text-[11px] font-bold px-2 py-0.5">Pulppo</span></button>
     <button type="button" id="tabToday" role="tab" class="tab-btn hidden">Hoy en la oficina</button>
   </nav>
 
@@ -142,11 +145,11 @@
             <input id="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"
                    class="field min-w-0 flex-1 tracking-widest">
             <button type="button" id="verifyBtn"
-                    class="shrink-0 rounded-lg bg-teal hover:bg-teal-dark disabled:opacity-50 text-white text-sm font-semibold px-4">Verificar</button>
+                    class="shrink-0 rounded-lg bg-py hover:bg-py-dark disabled:opacity-50 text-ink text-sm font-semibold px-4">Verificar</button>
           </div>
           <p id="codeHint" class="mt-2 text-xs text-slate-500"></p>
           <div class="mt-1 flex gap-4 text-xs">
-            <button type="button" id="resendBtn" class="font-semibold text-teal hover:text-teal-dark">Reenviar código</button>
+            <button type="button" id="resendBtn" class="font-semibold text-sea-dark hover:text-ink">Reenviar código</button>
             <button type="button" id="changeEmailBtn" class="font-semibold text-slate-600 hover:text-ink">Cambiar correo</button>
           </div>
         </div>
@@ -155,25 +158,25 @@
           <div class="min-w-0">
             <div class="text-sm font-semibold">
               Correo verificado
-              <span id="adminBadge" class="hidden ml-1 rounded-full bg-teal-soft text-teal-dark text-xs font-semibold px-2 py-0.5">Administrador</span>
+              <span id="adminBadge" class="hidden ml-1 rounded-full bg-py-soft text-ink text-xs font-semibold px-2 py-0.5">Administrador</span>
             </div>
             <div id="doneEmail" class="text-sm text-slate-600 break-all"></div>
           </div>
-          <button type="button" id="logoutBtn" class="shrink-0 text-sm font-semibold text-slate-600 hover:text-red-700">Salir</button>
+          <button type="button" id="logoutBtn" class="shrink-0 text-sm font-semibold text-slate-600 hover:text-rd">Salir</button>
         </div>
       </div>
 
-    <p id="idError" class="hidden mt-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+    <p id="idError" class="hidden mt-3 rounded-lg bg-rd-soft border border-rd/30 text-rd text-sm px-3 py-2" role="alert"></p>
   </div>
 
   <div id="roomsView">
-  <div id="roomsClosedBanner" class="hidden mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="status"></div>
+  <div id="roomsClosedBanner" class="hidden mb-4 rounded-xl border border-rd/30 bg-rd-soft px-4 py-3 text-sm font-semibold text-rd" role="status"></div>
   <div class="grid lg:grid-cols-5 gap-6 items-start">
 
     <!-- ============ FORMULARIO ============ -->
     <form id="bookingForm" class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5" novalidate>
 
-      <div id="editBanner" class="hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+      <div id="editBanner" class="hidden rounded-xl border border-py bg-py-soft px-4 py-3 text-sm text-ink">
         <div id="editText" class="font-semibold"></div>
         <button type="button" id="cancelEditBtn" class="mt-1 text-xs font-semibold underline">Cancelar el cambio y volver a reservar</button>
       </div>
@@ -207,7 +210,7 @@
       </fieldset>
 
       <div id="detailsBox" class="space-y-4">
-        <div>
+        <div id="hostBox" class="hidden">
           <label for="host" class="block text-sm font-semibold mb-1.5">Host</label>
           <select id="host" required class="field"></select>
         </div>
@@ -222,9 +225,9 @@
           <input id="visitor1" type="text" maxlength="80" required placeholder="Nombre y apellido" class="field">
           <div id="visitor2Box" class="hidden mt-2 flex items-center gap-2">
             <input id="visitor2" type="text" maxlength="80" placeholder="Nombre de la segunda visita" class="field min-w-0 flex-1">
-            <button type="button" id="removeVisitor2" class="shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-500 hover:text-red-700">Quitar</button>
+            <button type="button" id="removeVisitor2" class="shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-500 hover:text-rd">Quitar</button>
           </div>
-          <button type="button" id="addVisitor2" class="mt-2 rounded text-sm font-semibold text-teal hover:text-teal-dark">+ Agregar segunda visita</button>
+          <button type="button" id="addVisitor2" class="mt-2 rounded text-sm font-semibold text-sea-dark hover:text-ink">+ Agregar segunda visita</button>
         </div>
 
         <div id="numberBox" class="hidden">
@@ -238,12 +241,13 @@
         </div>
       </div>
 
-      <p id="formError" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+      <p id="formError" class="hidden rounded-lg bg-rd-soft border border-rd/30 text-rd text-sm px-3 py-2" role="alert"></p>
 
       <button id="submitBtn" type="submit"
-              class="w-full rounded-xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 transition-colors">
+              class="w-full rounded-xl bg-py hover:bg-py-dark disabled:bg-slate-300 disabled:text-white disabled:cursor-not-allowed text-ink font-bold py-3 transition-colors">
         Reservar sala
       </button>
+      <p id="toleranceNote" class="text-xs text-slate-500 text-center"></p>
     </form>
 
     <!-- ============ DISPONIBILIDAD ============ -->
@@ -254,7 +258,7 @@
           <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm free-swatch"></span>Libre</span>
           <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm hatch border"></span>Ocupada</span>
           <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm mine-block border"></span>Tu reserva</span>
-          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm bg-teal"></span>Tu selección</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 rounded-sm bg-py"></span>Tu selección</span>
         </div>
       </div>
 
@@ -270,14 +274,16 @@
 
       <div class="mt-6 pt-5 border-t border-slate-200">
         <h3 id="dayListTitle" class="text-sm font-semibold mb-3">Reservas del día</h3>
+        <div id="dayGroupTabs" class="hidden mb-3 flex flex-wrap gap-2" role="group" aria-label="Separar por dominio"></div>
         <div id="dayItems" class="space-y-2"></div>
       </div>
 
       <div id="mineBox" class="hidden mt-6 pt-5 border-t border-slate-200">
         <div class="flex items-center justify-between gap-3 mb-3">
           <h3 id="mineTitle" class="text-sm font-semibold">Mis reservas</h3>
-          <button type="button" id="refreshMine" class="text-xs font-semibold text-teal hover:text-teal-dark">Actualizar</button>
+          <button type="button" id="refreshMine" class="text-xs font-semibold text-sea-dark hover:text-ink">Actualizar</button>
         </div>
+        <div id="mineGroupTabs" class="hidden mb-3 flex flex-wrap gap-2" role="group" aria-label="Separar por dominio"></div>
         <div id="mineItems" class="space-y-2"></div>
       </div>
     </section>
@@ -287,7 +293,7 @@
 
   <!-- ============ LUGARES DE TRABAJO (equipo Pulppo) ============ -->
   <div id="seatsView" class="hidden">
-    <div id="seatsClosedBanner" class="hidden mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="status"></div>
+    <div id="seatsClosedBanner" class="hidden mb-4 rounded-xl border border-rd/30 bg-rd-soft px-4 py-3 text-sm font-semibold text-rd" role="status"></div>
     <div id="seatsGate" class="rounded-2xl bg-white border border-slate-200 shadow-sm p-6 text-sm text-slate-700"></div>
 
     <div id="seatsApp" class="hidden grid lg:grid-cols-5 gap-6 items-start">
@@ -337,10 +343,10 @@
           <div id="seatPick">Toca un lugar libre en el croquis.</div>
         </div>
 
-        <p id="seatError" class="hidden rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-3 py-2" role="alert"></p>
+        <p id="seatError" class="hidden rounded-lg bg-rd-soft border border-rd/30 text-rd text-sm px-3 py-2" role="alert"></p>
 
         <button type="button" id="seatSubmit" disabled
-                class="w-full rounded-xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3 transition-colors">
+                class="w-full rounded-xl bg-py hover:bg-py-dark disabled:bg-slate-300 disabled:text-white disabled:cursor-not-allowed text-ink font-bold py-3 transition-colors">
           Reservar lugar
         </button>
       </div>
@@ -352,7 +358,7 @@
             <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full free-swatch"></span>Libre</span>
             <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full hatch border"></span>Ocupado</span>
             <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full mine-block border"></span>Tuyo</span>
-            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full bg-teal"></span>Tu selección</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded-full bg-py"></span>Tu selección</span>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -365,7 +371,7 @@
     <section id="seatMineBox" class="hidden mt-6 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
       <div class="flex items-center justify-between gap-3 mb-3">
         <h3 id="seatMineTitle" class="text-sm font-semibold">Mis lugares reservados</h3>
-        <button type="button" id="seatRefreshMine" class="text-xs font-semibold text-teal hover:text-teal-dark">Actualizar</button>
+        <button type="button" id="seatRefreshMine" class="text-xs font-semibold text-sea-dark hover:text-ink">Actualizar</button>
       </div>
       <div id="seatMineItems" class="space-y-2"></div>
     </section>
@@ -390,10 +396,11 @@
           <button type="button" id="todayPrint" class="seg-btn no-print sm:ml-auto">Imprimir</button>
         </div>
         <h2 id="todayTitle" class="mt-4 text-lg font-bold capitalize"></h2>
-        <div id="todayChips" class="mt-2 flex flex-wrap gap-2 text-sm"></div>
+        <div id="todayGroupTabs" class="hidden mt-4 flex flex-wrap gap-2 no-print" role="group" aria-label="Separar por dominio"></div>
+        <div id="todayChips" class="mt-3 flex flex-wrap gap-2 text-sm"></div>
       </div>
 
-      <div id="todayClosed" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800"></div>
+      <div id="todayClosed" class="hidden rounded-xl border border-rd/30 bg-rd-soft px-4 py-3 text-sm font-semibold text-rd"></div>
 
       <section class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200">
         <h3 class="text-sm font-semibold mb-3">Visitas del día</h3>
@@ -440,14 +447,14 @@
       <h2 id="arrivalTitle" class="mt-1 text-2xl font-extrabold">Un momento…</h2>
       <p id="arrivalDetail" class="mt-3 text-slate-600"></p>
       <p id="arrivalMsg" class="hidden mt-5 rounded-xl px-4 py-3 text-sm font-semibold"></p>
-      <button type="button" id="arrivalBtn" class="hidden mt-6 w-full rounded-2xl bg-teal hover:bg-teal-dark disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-lg font-bold py-4">Ya llegué a la oficina</button>
+      <button type="button" id="arrivalBtn" class="hidden mt-6 w-full rounded-2xl bg-py hover:bg-py-dark disabled:bg-slate-300 disabled:text-white disabled:cursor-not-allowed text-ink text-lg font-bold py-4">Ya llegué a la oficina</button>
       <p id="arrivalHint" class="hidden mt-4 text-xs text-slate-500">Al tocar el botón avisamos a recepción para que bajen por ti.</p>
       <p id="arrivalAddr" class="mt-5 text-xs text-slate-500"></p>
     </div>
   </div>
 
   <p id="officeNote" class="mt-10 text-center text-sm font-semibold text-slate-600">Horario de trabajo de la oficina: lunes a viernes de 7:00 a 20:00 h · sábados de 9:00 a 15:00 h · domingos cerrado.</p>
-  <p id="versionNote" class="mt-1 text-center text-xs text-slate-400">Página: versión l · Script: comprobando…</p>
+  <p id="versionNote" class="mt-1 text-center text-xs text-slate-400">Página: versión m · Script: comprobando…</p>
 </div>
 
 <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
@@ -484,6 +491,7 @@ let seatsClosed = null;    // { closed, reason } del día elegido (lugares)
 let todayData = null;      // datos de "Hoy en la oficina"
 let todayForbidden = '';
 let closures = null;       // días cerrados (solo administradores)
+let viewGroup = 'externos'; // pestaña por dominio: externos (Pulppo y externos) | tuhabi
 
 /* ---------------- Utilidades ---------------- */
 const pad = (n) => String(n).padStart(2, '0');
@@ -542,14 +550,14 @@ function endSession(expired) {
 }
 
 /* ---------------- Versiones (para saber qué falta actualizar) ---------------- */
-const PAGE_VERSION = 'l';
+const PAGE_VERSION = 'm';
 function renderVersion() {
   const el = $('versionNote');
   const sv = cfg && cfg.version;
   const ok = !!sv && sv === PAGE_VERSION;
   el.textContent = `Página: versión ${PAGE_VERSION} · Script: ` + (sv ? `versión ${sv}` : 'desactualizado') +
     (ok ? ' ✓' : ' ⚠️ Falta publicar la misma versión en Apps Script (Nueva versión) o subir el index.html a GitHub.');
-  el.className = 'mt-1 text-center text-xs ' + (ok ? 'text-slate-400' : 'font-semibold text-amber-700');
+  el.className = 'mt-1 text-center text-xs ' + (ok ? 'text-slate-400' : 'font-semibold text-rd');
 }
 
 /* ---------------- API ---------------- */
@@ -621,7 +629,7 @@ async function loadMine() {
 
 /* ---------------- Render ---------------- */
 function setLive(ok, text) {
-  $('liveDot').className = 'inline-block w-2 h-2 rounded-full ' + (ok ? 'bg-emerald-500 pulse-dot' : 'bg-slate-400');
+  $('liveDot').className = 'inline-block w-2 h-2 rounded-full ' + (ok ? 'bg-sea pulse-dot' : 'bg-slate-400');
   $('liveText').textContent = text;
 }
 
@@ -643,6 +651,9 @@ function fillSelects() {
   try {
     const h = localStorage.getItem('rs_host'); if (h && hosts.includes(h)) $('host').value = h;
   } catch (e) {}
+  $('hostBox').classList.toggle('hidden', hosts.length <= 1);
+  if (hosts.length === 1) $('host').value = hosts[0];   // un solo host (Pulppo): se elige solo
+  $('toleranceNote').textContent = `⏱️ Tolerancia de ${cfg.toleranceMinutes || 15} minutos: si la visita no llega a tiempo o no se marca su llegada dentro de ${cfg.toleranceMinutes || 15} minutos después de la hora de inicio, la sala quedará liberada. Es importante respetar los tiempos de los demás.`;
   updateHostFields();
 }
 
@@ -716,7 +727,7 @@ function render() {
     $('endHint').textContent = late
       ? `Termina a las ${fromMin(range.e)}, después del cierre (${rh.close}:00).`
       : `Termina a las ${fromMin(range.e)}.`;
-    $('endHint').className = 'col-span-6 -mt-2 text-sm ' + (late ? 'text-red-700' : 'text-slate-500');
+    $('endHint').className = 'col-span-6 -mt-2 text-sm ' + (late ? 'text-rd' : 'text-slate-500');
   } else {
     $('endHint').textContent = '';
   }
@@ -756,11 +767,11 @@ function renderRooms(range) {
       const st = states[r.id], on = selectedRoom === r.id;
       return `
         <label class="block rounded-xl border px-3 py-2.5 transition-colors
-            ${st.off ? 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed' : 'cursor-pointer hover:border-teal'}
-            ${on ? 'border-teal bg-teal-soft ring-1 ring-teal' : 'border-slate-300'}">
+            ${st.off ? 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed' : 'cursor-pointer hover:border-py'}
+            ${on ? 'border-py bg-py-soft ring-1 ring-py' : 'border-slate-300'}">
           <input type="radio" name="room" value="${esc(r.id)}" class="sr-only" ${st.off ? 'disabled' : ''} ${on ? 'checked' : ''}>
           <span class="block text-sm font-semibold leading-tight ${st.off ? '' : 'text-ink'}">${esc(r.name)}</span>
-          <span class="block text-xs mt-0.5 ${st.busy ? 'text-red-700' : st.off ? 'text-slate-400' : (on ? 'text-teal-dark' : 'text-emerald-700')}">
+          <span class="block text-xs mt-0.5 ${st.busy ? 'text-rd' : st.off ? 'text-slate-400' : (on ? 'text-ink' : 'text-sea-dark')}">
             ${r.capacity} pers. · ${esc(st.text)}
           </span>
         </label>`;
@@ -801,7 +812,7 @@ function renderTimeline(range) {
     let sel = '';
     if (range && selectedRoom === r.id) {
       const l = Math.max(0, pct(range.s)), w = Math.min(100, pct(Math.min(range.e, close))) - l;
-      sel = `<div class="absolute inset-y-0 rounded-md bg-teal/90 ring-2 ring-teal" style="left:${l}%;width:${w}%"></div>`;
+      sel = `<div class="absolute inset-y-0 rounded-md bg-py ring-2 ring-py-dark" style="left:${l}%;width:${w}%"></div>`;
     }
 
     return `
@@ -825,13 +836,13 @@ function bookingCard(b, withDate) {
 
   const btn = 'rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold';
   const actions = [];
-  if (b.canMarkArrival && !b.arrived) actions.push(`<button type="button" data-act="arrive" data-id="${esc(b.id)}" title="${isStaff() ? 'Avisa en el chat que la visita ya llegó' : 'Avisa al equipo para que baje a recepción por la visita'}" class="${btn} border-emerald-300 text-emerald-800 hover:bg-emerald-50">${isStaff() ? '🚪 Marcar llegada' : '🚪 Avisar llegada'}</button>`);
-  if (b.arrivalUrl) actions.push(`<button type="button" data-act="copyarr" data-url="${esc(b.arrivalUrl)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Copiar enlace de llegada</button>`);
+  if (b.canMarkArrival && !b.arrived) actions.push(`<button type="button" data-act="arrive" data-id="${esc(b.id)}" title="${isStaff() ? 'Avisa en el chat que la visita ya llegó' : 'Avisa al equipo para que baje a recepción por la visita'}" class="${btn} border-sea text-sea-dark hover:bg-sea-soft">${isStaff() ? '🚪 Marcar llegada' : '🚪 Avisar llegada'}</button>`);
+  if (b.arrivalUrl) actions.push(`<button type="button" data-act="copyarr" data-url="${esc(b.arrivalUrl)}" class="${btn} border-slate-300 hover:border-py hover:text-ink">Copiar enlace de llegada</button>`);
   if (b.editable) {
-    actions.push(`<button type="button" data-act="resched" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Reagendar</button>`);
-    actions.push(`<button type="button" data-act="cancel" data-id="${esc(b.id)}" class="${btn} border-red-200 text-red-700 hover:bg-red-50">Cancelar</button>`);
+    actions.push(`<button type="button" data-act="resched" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-py hover:text-ink">Reagendar</button>`);
+    actions.push(`<button type="button" data-act="cancel" data-id="${esc(b.id)}" class="${btn} border-rd/40 text-rd hover:bg-rd-soft">Cancelar</button>`);
   }
-  const arrived = b.arrived ? `<div class="mt-1 inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">✅ Llegó a las ${esc(b.arrived)}</div>`
+  const arrived = b.arrived ? `<div class="mt-1 inline-block rounded-full bg-sea-soft px-2.5 py-0.5 text-xs font-bold text-sea-dark">✅ Llegó a las ${esc(b.arrived)}</div>`
     : (b.arrivalOpensAt ? `<div class="mt-1 text-xs text-slate-500">🚪 Podrás avisar la llegada de la visita desde las ${esc(b.arrivalOpensAt)}</div>` : '');
 
   return `
@@ -851,6 +862,25 @@ function bookingCard(b, withDate) {
     </div>`;
 }
 
+/* ---------- Pestañas por dominio: "Pulppo y externos" y "Tuhabi" (solo recepción y administradores) ---------- */
+const GROUP_LABEL = { externos: 'Pulppo y externos', tuhabi: 'Tuhabi' };
+function groupOf(b) { return b.group === 'tuhabi' ? 'tuhabi' : 'externos'; }
+function groupTabs(boxId, counts) {
+  const box = $(boxId);
+  box.innerHTML = ['externos', 'tuhabi'].map((g) =>
+    `<button type="button" data-act="group" data-group="${g}" class="seg-btn ${viewGroup === g ? 'seg-on' : ''}">${GROUP_LABEL[g]} <span class="font-normal opacity-70">· ${counts[g]}</span></button>`).join('');
+  box.classList.remove('hidden');
+}
+function countGroups(list) {
+  const c = { externos: 0, tuhabi: 0 };
+  list.forEach((b) => { c[groupOf(b)]++; });
+  return c;
+}
+function setViewGroup(g) {
+  viewGroup = g === 'tuhabi' ? 'tuhabi' : 'externos';
+  if (cfg) { renderDayList(); renderMine(); renderToday(); }
+}
+
 function renderDayList() {
   if (!cfg) return;
   $('dayListTitle').textContent = !session ? 'Reservas del día'
@@ -860,10 +890,16 @@ function renderDayList() {
     $('dayItems').innerHTML = '<p class="text-sm text-slate-500">Verifica tu correo para ver los datos de tus reservas. Las demás salas aparecen solo como ocupadas.</p>';
     return;
   }
-  const list = bookings.filter((b) => b.detail).sort((a, b) => toMin(a.start) - toMin(b.start));
+  let list = bookings.filter((b) => b.detail).sort((a, b) => toMin(a.start) - toMin(b.start));
+  if (isStaff()) {
+    groupTabs('dayGroupTabs', countGroups(list));
+    list = list.filter((b) => groupOf(b) === viewGroup);
+  } else {
+    $('dayGroupTabs').classList.add('hidden');
+  }
   $('dayItems').innerHTML = list.length
     ? list.map((b) => bookingCard(b, false)).join('')
-    : '<p class="text-sm text-slate-500">No hay reservas tuyas para este día.</p>';
+    : `<p class="text-sm text-slate-500">${isStaff() ? 'No hay reservas de ' + GROUP_LABEL[viewGroup] + ' para este día.' : 'No hay reservas tuyas para este día.'}</p>`;
 }
 
 function renderMine() {
@@ -873,8 +909,15 @@ function renderMine() {
   $('mineTitle').textContent = (session.admin ? 'Todas las reservas' : 'Mis reservas') + ' · próximos 60 días';
 
   if (mine === null) { $('mineItems').innerHTML = '<p class="text-sm text-slate-500">Cargando…</p>'; return; }
-  $('mineItems').innerHTML = mine.bookings.length
-    ? mine.bookings.map((b) => bookingCard(b, true)).join('')
+  let list = mine.bookings;
+  if (isStaff()) {
+    groupTabs('mineGroupTabs', countGroups(list));
+    list = list.filter((b) => groupOf(b) === viewGroup);
+  } else {
+    $('mineGroupTabs').classList.add('hidden');
+  }
+  $('mineItems').innerHTML = list.length
+    ? list.map((b) => bookingCard(b, true)).join('')
     : '<p class="text-sm text-slate-500">Todavía no hay reservas próximas.</p>';
 }
 
@@ -882,7 +925,7 @@ function renderMine() {
 function toast(msg, type) {
   const el = document.createElement('div');
   el.className = 'toast-in mb-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-lg ' +
-    (type === 'error' ? 'bg-red-700 text-white' : 'bg-ink text-white');
+    (type === 'error' ? 'bg-rd text-white' : 'bg-ink text-white');
   el.textContent = msg;
   $('toastBox').appendChild(el);
   setTimeout(() => el.remove(), 6000);
@@ -1081,6 +1124,7 @@ document.addEventListener('click', (e) => {
   if (btn.dataset.act === 'seatcancel') { cancelSeat(btn.dataset.id); return; }
   if (btn.dataset.act === 'seatics') { const sb = findSeat(btn.dataset.id); if (sb) downloadIcs(sb); return; }
   if (btn.dataset.act === 'closeremove') { removeClosure(btn.dataset.date, btn.dataset.scope); return; }
+  if (btn.dataset.act === 'group') { setViewGroup(btn.dataset.group); return; }
   if (btn.dataset.act === 'copyarr') { copyText(btn.dataset.url); return; }
   if (btn.dataset.act === 'arrive') { const ab = findBooking(btn.dataset.id); if (ab) markArrival(ab); return; }
   const b = findBooking(btn.dataset.id);
@@ -1124,6 +1168,7 @@ $('bookingForm').addEventListener('submit', async (ev) => {
     });
     if (r.ok) {
       toast(r.message || 'Reserva confirmada.');
+      toast(`⏱️ Recuerda: hay ${cfg.toleranceMinutes || 15} minutos de tolerancia. Si no llegan o no marcan llegada, la sala se libera.`);
       if (r.chat && r.chat !== 'OK') toast('La reserva se guardó, pero el aviso a Chat falló: ' + r.chat, 'error');
       try { localStorage.setItem('rs_host', host); } catch (x) {}
       resetVisitors();
@@ -1295,13 +1340,13 @@ function renderSeats() {
   if (selectedSeat && seatHit(selectedSeat, range)) selectedSeat = null;
 
   let svg = `<svg viewBox="0 0 ${m.width} ${m.height}" class="w-full h-auto" role="group" aria-label="Croquis de la oficina con los lugares de trabajo">
-    <defs><pattern id="seatHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#F6D9D9"/><rect width="2.6" height="8" fill="rgba(185,28,28,.32)"/></pattern></defs>
+    <defs><pattern id="seatHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#F8DDD6"/><rect width="2.6" height="8" fill="rgba(165,32,3,.32)"/></pattern></defs>
     <rect x="2" y="2" width="${m.width - 4}" height="${m.height - 4}" rx="18" fill="#FAFBFC" stroke="#CBD5E1" stroke-width="3"/>`;
   (m.shapes || []).forEach((h) => {
     svg += `<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="10" fill="${h.fill}" stroke="${h.stroke}" stroke-width="2"/>`;
     if (h.label) {
       const rot = h.rot ? ` transform="rotate(${h.rot} ${h.lx} ${h.ly})"` : '';
-      svg += `<text x="${h.lx}" y="${h.ly}" text-anchor="middle" dominant-baseline="central" font-size="${h.lf || 15}" font-weight="700" fill="${h.lc || '#4B7BB0'}" letter-spacing="${h.ls == null ? 3 : h.ls}"${rot}>${esc(h.label)}</text>`;
+      svg += `<text x="${h.lx}" y="${h.ly}" text-anchor="middle" dominant-baseline="central" font-size="${h.lf || 15}" font-weight="700" fill="${h.lc || '#3D7A7A'}" letter-spacing="${h.ls == null ? 3 : h.ls}"${rot}>${esc(h.label)}</text>`;
     }
   });
   (m.texts || []).forEach((t) => {
@@ -1409,10 +1454,10 @@ function seatCard(b) {
   const btn = 'rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold';
   const actions = [];
   if (b.mine && b.editable) {
-    actions.push(`<a href="${esc(gcalUrl(b))}" target="_blank" rel="noopener" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">Agregar a mi calendario</a>`);
-    actions.push(`<button type="button" data-act="seatics" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-teal hover:text-teal-dark">.ics</button>`);
+    actions.push(`<a href="${esc(gcalUrl(b))}" target="_blank" rel="noopener" class="${btn} border-slate-300 hover:border-py hover:text-ink">Agregar a mi calendario</a>`);
+    actions.push(`<button type="button" data-act="seatics" data-id="${esc(b.id)}" class="${btn} border-slate-300 hover:border-py hover:text-ink">.ics</button>`);
   }
-  if (b.editable) actions.push(`<button type="button" data-act="seatcancel" data-id="${esc(b.id)}" class="${btn} border-red-200 text-red-700 hover:bg-red-50">Cancelar</button>`);
+  if (b.editable) actions.push(`<button type="button" data-act="seatcancel" data-id="${esc(b.id)}" class="${btn} border-rd/40 text-rd hover:bg-rd-soft">Cancelar</button>`);
   return `
     <div class="rounded-xl border ${b.mine ? 'mine-card' : 'border-slate-200'} px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -1518,8 +1563,13 @@ function renderToday() {
   const d = todayData;
   $('todayTitle').textContent = prettyDate(d.date);
   const chip = (t) => `<span class="rounded-full bg-slate-100 px-3 py-1 font-semibold">${esc(t)}</span>`;
-  const arrivedN = d.rooms.filter((b) => b.arrived).length;
-  $('todayChips').innerHTML = chip(`Visitas: ${d.rooms.length}`) + (d.rooms.length ? chip(`Ya llegaron: ${arrivedN} de ${d.rooms.length}`) : '') + chip(`Lugares: ${d.seats.length} de ${d.seatTotal}`);
+  const rc = countGroups(d.rooms), sc = countGroups(d.seats);
+  groupTabs('todayGroupTabs', { externos: rc.externos + sc.externos, tuhabi: rc.tuhabi + sc.tuhabi });
+  const rooms = d.rooms.filter((b) => groupOf(b) === viewGroup);
+  const seats = d.seats.filter((b) => groupOf(b) === viewGroup);
+  const arrivedN = rooms.filter((b) => b.arrived).length;
+  $('todayChips').innerHTML = chip(`Visitas: ${rooms.length}`) + (rooms.length ? chip(`Ya llegaron: ${arrivedN} de ${rooms.length}`) : '') +
+    chip(`Lugares: ${seats.length}`) + chip(`Total del día: ${d.rooms.length} visitas · ${d.seats.length} de ${d.seatTotal} lugares`);
 
   const msgs = [];
   if (d.closedRooms.closed && d.closedSeats.closed) msgs.push(d.closedRooms.reason);
@@ -1530,12 +1580,12 @@ function renderToday() {
   $('todayClosed').textContent = msgs.length ? '🚫 ' + msgs.join(' · ') : '';
   $('todayClosed').classList.toggle('hidden', !msgs.length);
 
-  $('todayRooms').innerHTML = d.rooms.length
-    ? d.rooms.map((b) => bookingCard(b, false)).join('')
-    : '<p class="text-sm text-slate-500">No hay visitas reservadas este día.</p>';
-  $('todaySeats').innerHTML = d.seats.length
-    ? d.seats.map(seatCard).join('')
-    : '<p class="text-sm text-slate-500">No hay lugares reservados este día.</p>';
+  $('todayRooms').innerHTML = rooms.length
+    ? rooms.map((b) => bookingCard(b, false)).join('')
+    : `<p class="text-sm text-slate-500">No hay visitas de ${GROUP_LABEL[viewGroup]} este día.</p>`;
+  $('todaySeats').innerHTML = seats.length
+    ? seats.map(seatCard).join('')
+    : `<p class="text-sm text-slate-500">No hay lugares reservados por ${GROUP_LABEL[viewGroup]} este día.</p>`;
   $('closuresBox').classList.toggle('hidden', !(session && session.admin));
 }
 
@@ -1546,7 +1596,7 @@ function closeMsg(text, isErr) {
   const el = $('closeMsg');
   el.textContent = text || '';
   el.className = 'mt-3 text-sm rounded-lg px-3 py-2 ' +
-    (isErr ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-800') + (text ? '' : ' hidden');
+    (isErr ? 'bg-rd-soft border border-rd/30 text-rd' : 'bg-sea-soft border border-sea text-sea-dark') + (text ? '' : ' hidden');
 }
 
 async function loadClosures() {
@@ -1571,7 +1621,7 @@ function renderClosures() {
           <div><span class="font-semibold capitalize">${esc(prettyDate(c.date, true))}</span>
             <span class="text-slate-500">· ${esc(scopeLabel(c.scope))}${c.reason ? ' · ' + esc(c.reason) : ''}</span></div>
           <button type="button" data-act="closeremove" data-date="${esc(c.date)}" data-scope="${esc(c.scope)}"
-                  class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:border-teal">Reabrir</button>
+                  class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold hover:border-py">Reabrir</button>
         </div>`).join('')
     : '<p class="text-sm text-slate-500">No hay días cerrados próximos.</p>';
 }
@@ -1724,7 +1774,7 @@ async function markArrival(b) {
 function arrivalMsg(text, ok) {
   const el = $('arrivalMsg');
   el.textContent = text || '';
-  el.className = 'mt-5 rounded-xl px-4 py-3 text-sm font-semibold ' + (ok ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-red-50 border border-red-200 text-red-800') + (text ? '' : ' hidden');
+  el.className = 'mt-5 rounded-xl px-4 py-3 text-sm font-semibold ' + (ok ? 'bg-sea-soft border border-sea text-sea-dark' : 'bg-rd-soft border border-rd/30 text-rd') + (text ? '' : ' hidden');
 }
 
 function renderArrival(r) {
@@ -1754,6 +1804,7 @@ function renderArrival(r) {
     hide(btn, true); hide($('arrivalHint'), true);
   } else {
     $('arrivalTitle').textContent = 'Bienvenido(a)';
+    $('arrivalHint').textContent = `Al tocar el botón avisamos a recepción para que bajen por ti. Hay ${r.tolerance || 15} minutos de tolerancia después de la hora de inicio; pasado ese tiempo la sala se libera.`;
     hide(btn, false); btn.disabled = false; hide($('arrivalHint'), false);
   }
 }
