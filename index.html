@@ -63,12 +63,12 @@
   .seg-btn { padding: .6rem .75rem; border-radius: .625rem; font-weight: 600; font-size: .875rem; background: #fff; border: 1px solid #cbd5e1; color: #334155; }
   .seg-on { background: #FFF6D6; border-color: #F6BE00; color: #212322; }
   /* Croquis de lugares */
-  .seat circle { stroke-width: 3; }
+  .seat circle { stroke-width: 3; filter: drop-shadow(0 1.5px 1.5px rgba(33,35,34,.28)); transition: transform .12s ease, fill .12s ease; transform-box: fill-box; transform-origin: center; }
   .seat text { pointer-events: none; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; }
   .seat-free { cursor: pointer; }
   .seat-free circle { fill: #E4F0F0; stroke: #529999; }
   .seat-free text { fill: #2F6B6B; }
-  .seat-free:hover circle { fill: #CFE5E5; }
+  .seat-free:hover circle { fill: #CFE5E5; transform: scale(1.1); }
   .seat-taken { cursor: not-allowed; }
   .seat-taken circle { fill: url(#seatHatch); stroke: #D9937F; }
   .seat-taken text { fill: #A52003; }
@@ -76,7 +76,7 @@
   .seat-mine circle { fill: #212322; stroke: #212322; }
   .seat-mine text { fill: #fff; }
   .seat-selected { cursor: pointer; }
-  .seat-selected circle { fill: #F6BE00; stroke: #D9A600; }
+  .seat-selected circle { fill: #F6BE00; stroke: #D9A600; transform: scale(1.1); }
   .seat-selected text { fill: #212322; }
   @media print {
     nav[role=tablist], #identityWrap, #toastBox, #roomsView, #seatsView, #officeNote, .no-print { display: none !important; }
@@ -364,7 +364,7 @@
         <div class="overflow-x-auto">
           <div id="seatMapBox" class="min-w-[640px]"></div>
         </div>
-        <p class="mt-3 text-xs text-slate-500">Vista desde arriba: la ventana está arriba y la pared de la izquierda a la izquierda.</p>
+        <p class="mt-3 text-xs text-slate-500">Vista desde arriba: la ventana está arriba, las mesas largas apuntan hacia ella, la pared morada queda a la izquierda y la salita a la derecha. La salita es zona de estar y no se reserva.</p>
       </section>
     </div>
 
@@ -454,7 +454,7 @@
   </div>
 
   <p id="officeNote" class="mt-10 text-center text-sm font-semibold text-slate-600">Horario de trabajo de la oficina: lunes a viernes de 7:00 a 20:00 h · sábados de 9:00 a 15:00 h · domingos cerrado.</p>
-  <p id="versionNote" class="mt-1 text-center text-xs text-slate-400">Página: versión m · Script: comprobando…</p>
+  <p id="versionNote" class="mt-1 text-center text-xs text-slate-400">Página: versión o · Script: comprobando…</p>
 </div>
 
 <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50" aria-live="assertive"></div>
@@ -550,7 +550,7 @@ function endSession(expired) {
 }
 
 /* ---------------- Versiones (para saber qué falta actualizar) ---------------- */
-const PAGE_VERSION = 'm';
+const PAGE_VERSION = 'o';
 function renderVersion() {
   const el = $('versionNote');
   const sv = cfg && cfg.version;
@@ -1333,37 +1333,249 @@ function seatHit(n, range) {
   return seatBookings.find((b) => b.seat === n && range.s < toMin(b.end) && range.e > toMin(b.start)) || null;
 }
 
+/* ---------------- Croquis de la oficina (dibujo) ---------------- */
+function mapSvg(m, stateOf) {
+  const W = m.width, H = m.height;
+  const lbl = (h, color) => {
+    if (!h.label) return '';
+    const rot = h.rot ? ` transform="rotate(${h.rot} ${h.lx} ${h.ly})"` : '';
+    return `<text x="${h.lx}" y="${h.ly}" text-anchor="middle" dominant-baseline="central" font-size="${h.lf || 12}" font-weight="800" fill="${color}" letter-spacing="${h.ls == null ? 2.5 : h.ls}" opacity=".9"${rot}>${esc(h.label)}</text>`;
+  };
+
+  const table = (h, dark) => {
+    const cols = h.cols || 1;
+    const edge = dark ? '#5E4528' : '#A67F4B';
+    let s = `<g filter="url(#fShadow)"><rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="9" fill="url(#${dark ? 'gWoodDark' : 'gWood'})" stroke="${edge}" stroke-width="1.6"/></g>` +
+      `<rect x="${h.x + 2}" y="${h.y + 2}" width="${h.w - 4}" height="${h.h - 4}" rx="7.5" fill="url(#gGrain)" opacity="${dark ? .35 : .55}"/>`;
+    const horiz = h.w >= h.h;
+    for (let i = 1; i < cols; i++) {
+      const p = h.x + (h.w * i) / cols;
+      s += `<line x1="${p}" y1="${h.y + 2}" x2="${p}" y2="${h.y + h.h - 2}" stroke="${edge}" stroke-width="1.3" opacity=".8"/>`;
+    }
+    if (horiz && cols >= 3) {   // ranuras de cables en la primera y la última sección (en medio va el nombre)
+      [0, cols - 1].forEach((i) => {
+        const cx = h.x + (h.w * (i + 0.5)) / cols, cy = h.y + h.h / 2;
+        s += `<rect x="${cx - 18}" y="${cy - 2.5}" width="36" height="5" rx="2.5" fill="#3A3027" opacity=".7"/>`;
+      });
+    }
+    return s + lbl(h, dark ? '#F3E6D0' : '#6B4F2A');
+  };
+
+  const win = (h) => {
+    let s = `<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="6" fill="url(#gGlass)" stroke="#8FBDBD" stroke-width="2"/>`;
+    const n = Math.max(1, Math.round(h.w / 90));
+    for (let i = 1; i < n; i++) {
+      const p = h.x + (h.w * i) / n;
+      s += `<line x1="${p}" y1="${h.y + 2}" x2="${p}" y2="${h.y + h.h - 2}" stroke="#fff" stroke-width="2.2" opacity=".95"/>`;
+    }
+    return s + `<text x="${h.x + h.w / 2}" y="${h.y + h.h / 2}" text-anchor="middle" dominant-baseline="central" font-size="10.5" font-weight="800" fill="#3D7A7A" letter-spacing="5" opacity=".85">${esc(h.label || 'VENTANA')}</text>`;
+  };
+
+  const leaf = (cx, cy, r, c) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}"/>`;
+  const planter = (x, y, w, hgt) => {
+    let s = '';
+    const greens = ['#3D7A7A', '#529999', '#6FB0A6', '#2F6B6B', '#8CC5BA'];
+    const n = Math.round(w / 17);
+    for (let i = 0; i < n; i++) {
+      const cx = x + 10 + (i * (w - 20)) / (n - 1), up = (i % 3) * 3;
+      s += leaf(cx, y - 2 - up + (i % 2) * 2, 10 + (i % 4) * 1.6, greens[i % greens.length]);
+    }
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${hgt}" rx="5" fill="#2A2D2C" filter="url(#fShadow)"/>` +
+         `<rect x="${x + 3}" y="${y + 3}" width="${w - 6}" height="5" rx="2.5" fill="#43504E"/>`;
+    for (let i = 0; i < n; i++) s += leaf(x + 10 + (i * (w - 20)) / (n - 1), y + 2, 6 + (i % 3), greens[(i + 2) % greens.length]);
+    return s;
+  };
+
+  const lounge = (o) => {
+    const x = o.x, y = o.y;
+    let s = '';
+    // jardineras que separan la salita de las mesas
+    [0, 1, 2, 3].forEach((i) => { s += planter(x + 10 + i * 140, y + 14, 120, 26); });
+    // tapete (gris con manchas amarillas)
+    s += `<rect x="${x + 30}" y="${y + 58}" width="500" height="172" rx="16" fill="url(#gRug)" stroke="#D5CFC1" stroke-width="2"/>`;
+    // sillón en U: respaldo y asientos
+    const back = '#AEB3B1', seat = 'url(#gSofa)', edge = '#A3A8A6';
+    s += `<g filter="url(#fShadow)">` +
+      `<rect x="${x + 62}" y="${y + 70}" width="336" height="16" rx="8" fill="${back}"/>` +
+      `<rect x="${x + 62}" y="${y + 70}" width="16" height="132" rx="8" fill="${back}"/>` +
+      `<rect x="${x + 480}" y="${y + 86}" width="16" height="116" rx="8" fill="${back}"/>` +
+      `<rect x="${x + 70}" y="${y + 82}" width="330" height="58" rx="16" fill="${seat}" stroke="${edge}" stroke-width="1.6"/>` +
+      `<rect x="${x + 74}" y="${y + 82}" width="62" height="124" rx="16" fill="${seat}" stroke="${edge}" stroke-width="1.6"/>` +
+      `<rect x="${x + 424}" y="${y + 98}" width="62" height="108" rx="16" fill="${seat}" stroke="${edge}" stroke-width="1.6"/>` +
+      `</g>`;
+    // separaciones de los módulos del sillón
+    [200, 300].forEach((dx) => { s += `<line x1="${x + dx}" y1="${y + 84}" x2="${x + dx}" y2="${y + 138}" stroke="${edge}" stroke-width="1.2" opacity=".7"/>`; });
+    // cojines amarillos
+    s += `<rect x="${x + 290}" y="${y + 92}" width="38" height="32" rx="9" fill="#F6BE00" stroke="#D9A600" stroke-width="1.4" transform="rotate(-8 ${x + 309} ${y + 108})"/>` +
+         `<rect x="${x + 334}" y="${y + 96}" width="38" height="32" rx="9" fill="#F9D45C" stroke="#D9A600" stroke-width="1.4" transform="rotate(7 ${x + 353} ${y + 112})"/>`;
+    // mesa de centro de mármol con maceta
+    s += `<g filter="url(#fShadow)"><circle cx="${x + 280}" cy="${y + 170}" r="34" fill="#FBFAF7" stroke="#CFCDC6" stroke-width="2"/></g>` +
+         `<path d="M${x + 258} ${y + 160} q14 -6 22 4 t24 -2 M${x + 262} ${y + 182} q12 -8 20 2 t20 -4" fill="none" stroke="#DAD8D1" stroke-width="2" stroke-linecap="round"/>` +
+         `<circle cx="${x + 280}" cy="${y + 170}" r="12" fill="#2A2D2C"/>` + leaf(x + 280, y + 166, 10, '#529999') + leaf(x + 274, y + 170, 6, '#3D7A7A') + leaf(x + 287, y + 171, 6, '#6FB0A6');
+    // librero y credenza de la tele
+    s += `<g filter="url(#fShadow)"><rect x="${x + 70}" y="${y + 234}" width="62" height="34" rx="5" fill="url(#gWood)" stroke="#A67F4B" stroke-width="1.4"/>` +
+         `<rect x="${x + 150}" y="${y + 238}" width="216" height="18" rx="5" fill="url(#gWood)" stroke="#A67F4B" stroke-width="1.4"/></g>` +
+         leaf(x + 101, y + 249, 9, '#529999') + leaf(x + 96, y + 253, 6, '#3D7A7A') +
+         `<rect x="${x + 180}" y="${y + 262}" width="156" height="7" rx="3" fill="#1F2221"/>` +
+         `<polygon points="${x + 162},${y + 238} ${x + 170},${y + 238} ${x + 166},${y + 228}" fill="#2A2D2C"/><polygon points="${x + 348},${y + 238} ${x + 356},${y + 238} ${x + 352},${y + 228}" fill="#2A2D2C"/>` +
+         `<text x="${x + 258}" y="${y + 247}" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="800" fill="#8A6D3B" letter-spacing="3">TV</text>`;
+    // etiqueta
+    s += `<g><rect x="${x + 382}" y="${y + 206}" width="148" height="34" rx="17" fill="#fff" stroke="#D0D3D4" stroke-width="1.4" opacity=".96"/>` +
+         `<text x="${x + 456}" y="${y + 218}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="#212322" letter-spacing="3">SALITA</text>` +
+         `<text x="${x + 456}" y="${y + 232}" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#64748B" letter-spacing=".4">zona de estar · no se reserva</text></g>`;
+    return s;
+  };
+
+
+  // mesa larga de dos lados (como las de las fotos): dos hileras de módulos separadas por la canaleta de cables
+  const bench = (h) => {
+    const gap = 14, rw = (h.w - gap) / 2, mods = h.mods || 2, edge = '#A67F4B';
+    let s = '';
+    [0, 1].forEach((r) => {
+      const rx0 = h.x + r * (rw + gap);
+      s += `<g filter="url(#fShadow)"><rect x="${rx0}" y="${h.y}" width="${rw}" height="${h.h}" rx="8" fill="url(#gWoodV)" stroke="${edge}" stroke-width="1.6"/></g>` +
+           `<rect x="${rx0 + 2}" y="${h.y + 2}" width="${rw - 4}" height="${h.h - 4}" rx="6.5" fill="url(#gGrainV)" opacity=".55"/>`;
+      for (let i = 1; i < mods; i++) {
+        const py = h.y + (h.h * i) / mods;
+        s += `<line x1="${rx0 + 2}" y1="${py}" x2="${rx0 + rw - 2}" y2="${py}" stroke="${edge}" stroke-width="1.3" opacity=".8"/>`;
+      }
+      for (let i = 0; i < mods; i++) {   // ranuras de cables de cada módulo, del lado de la canaleta
+        const cy = h.y + (h.h * (i + 0.5)) / mods, sx = r === 0 ? rx0 + rw - 12 : rx0 + 9;
+        s += `<rect x="${sx}" y="${cy - 17}" width="3.5" height="34" rx="1.8" fill="#3A3027" opacity=".7"/>`;
+      }
+    });
+    s += `<rect x="${h.x + rw + 3}" y="${h.y + 4}" width="${gap - 6}" height="${h.h - 8}" rx="3" fill="#4A4F4E" opacity=".85"/>`;
+    if (h.label) {
+      s += `<text x="${h.x + h.w / 2}" y="${h.y + h.h + 22}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="800" fill="#6B4F2A" letter-spacing="3">${esc(h.label)}</text>`;
+    }
+    return s;
+  };
+
+  const column = (h) => `<g filter="url(#fShadow)"><rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="3" fill="#B7BBB8" stroke="#8F9492" stroke-width="1.6"/>` +
+    `<path d="M${h.x + 6} ${h.y + 8}h${h.w - 12}M${h.x + 6} ${h.y + h.h / 2}h${h.w - 12}M${h.x + 6} ${h.y + h.h - 8}h${h.w - 12}" stroke="#A4A9A6" stroke-width="1.4"/></g>` +
+    `<text x="${h.x + h.w / 2}" y="${h.y + h.h + 12}" text-anchor="middle" font-size="8.5" font-weight="800" fill="#7B807E" letter-spacing="1.5">COLUMNA</text>`;
+  const cabinet = (h) => `<g filter="url(#fShadow)"><rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="3" fill="#2A2D2C"/>` +
+    `<path d="M${h.x + 4} ${h.y + h.h / 2}h${h.w - 8}" stroke="#4A504F" stroke-width="1.6"/></g>` +
+    `<rect x="${h.x + 5}" y="${h.y + 4}" width="${h.w - 10}" height="${h.h / 2 - 8}" rx="1.5" fill="#D8C9A8" opacity=".9"/>`;
+  const printer = (h) => `<g filter="url(#fShadow)"><rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="5" fill="#E9EBEA" stroke="#B5B9B7" stroke-width="1.6"/>` +
+    `<rect x="${h.x + 5}" y="${h.y + 5}" width="${h.w - 10}" height="9" rx="2" fill="#C9CDCB"/><rect x="${h.x + h.w - 17}" y="${h.y + h.h - 12}" width="11" height="6" rx="1.5" fill="#6B7170"/></g>` +
+    `<text x="${h.x + h.w / 2}" y="${h.y + h.h + 12}" text-anchor="middle" font-size="8.5" font-weight="800" fill="#7B807E" letter-spacing="1.5">IMPRESORA</text>`;
+
+  const planterV = (x, y, w, hgt) => {
+    let s = '';
+    const greens = ['#3D7A7A', '#529999', '#6FB0A6', '#2F6B6B', '#8CC5BA'];
+    const n = Math.round(hgt / 16);
+    s += `<rect x="${x}" y="${y}" width="${w}" height="${hgt}" rx="5" fill="#2A2D2C" filter="url(#fShadow)"/>`;
+    for (let i = 0; i < n; i++) s += leaf(x + w / 2 + ((i % 2) ? 3 : -3), y + 9 + (i * (hgt - 18)) / (n - 1), 10 + (i % 4) * 1.5, greens[i % greens.length]);
+    for (let i = 0; i < n; i++) s += leaf(x + w / 2 + ((i % 2) ? -4 : 4), y + 9 + (i * (hgt - 18)) / (n - 1), 6 + (i % 3), greens[(i + 2) % greens.length]);
+    return s;
+  };
+
+  // la salita junto a la ventana: sillón en L, tapete, mesa de centro, tele con su credenza y librero
+  const lounge2 = (o) => {
+    const x = o.x, y = o.y;
+    let s = '';
+    [0, 1, 2, 3, 4].forEach((i) => { s += planterV(x - 34, y + 8 + i * 74, 24, 66); });
+    s += `<rect x="${x + 6}" y="${y + 58}" width="248" height="304" rx="16" fill="url(#gRug)" stroke="#D5CFC1" stroke-width="2"/>`;
+    const back = '#AEB3B1', seat = 'url(#gSofa)', edge = '#A3A8A6';
+    s += `<g filter="url(#fShadow)">` +
+      `<rect x="${x + 24}" y="${y + 50}" width="196" height="14" rx="7" fill="${back}"/>` +
+      `<rect x="${x + 24}" y="${y + 50}" width="14" height="190" rx="7" fill="${back}"/>` +
+      `<rect x="${x + 34}" y="${y + 62}" width="184" height="56" rx="16" fill="${seat}" stroke="${edge}" stroke-width="1.6"/>` +
+      `<rect x="${x + 36}" y="${y + 62}" width="58" height="170" rx="16" fill="${seat}" stroke="${edge}" stroke-width="1.6"/>` +
+      `</g>`;
+    [118, 168].forEach((dx) => { s += `<line x1="${x + dx}" y1="${y + 64}" x2="${x + dx}" y2="${y + 116}" stroke="${edge}" stroke-width="1.2" opacity=".7"/>`; });
+    s += `<line x1="${x + 38}" y1="${y + 120}" x2="${x + 92}" y2="${y + 120}" stroke="${edge}" stroke-width="1.2" opacity=".7"/><line x1="${x + 38}" y1="${y + 176}" x2="${x + 92}" y2="${y + 176}" stroke="${edge}" stroke-width="1.2" opacity=".7"/>`;
+    s += `<rect x="${x + 128}" y="${y + 72}" width="34" height="30" rx="9" fill="#F6BE00" stroke="#D9A600" stroke-width="1.4" transform="rotate(-8 ${x + 145} ${y + 87})"/>` +
+         `<rect x="${x + 168}" y="${y + 76}" width="34" height="30" rx="9" fill="#F9D45C" stroke="#D9A600" stroke-width="1.4" transform="rotate(7 ${x + 185} ${y + 91})"/>`;
+    s += `<g filter="url(#fShadow)"><circle cx="${x + 150}" cy="${y + 214}" r="32" fill="#FBFAF7" stroke="#CFCDC6" stroke-width="2"/></g>` +
+         `<path d="M${x + 130} ${y + 206} q12 -6 20 4 t22 -2 M${x + 134} ${y + 226} q11 -8 18 2 t18 -4" fill="none" stroke="#DAD8D1" stroke-width="2" stroke-linecap="round"/>` +
+         `<circle cx="${x + 150}" cy="${y + 214}" r="11" fill="#2A2D2C"/>` + leaf(x + 150, y + 210, 9, '#529999') + leaf(x + 145, y + 214, 6, '#3D7A7A') + leaf(x + 156, y + 215, 6, '#6FB0A6');
+    // tele en la pared del fondo, con credenza y librero
+    s += `<rect x="${x + 250}" y="${y + 130}" width="7" height="140" rx="3" fill="#1F2221"/>` +
+         `<g filter="url(#fShadow)"><rect x="${x + 226}" y="${y + 132}" width="20" height="136" rx="5" fill="url(#gWood)" stroke="#A67F4B" stroke-width="1.4"/>` +
+         `<rect x="${x + 214}" y="${y + 36}" width="34" height="60" rx="4" fill="url(#gWood)" stroke="#A67F4B" stroke-width="1.4"/></g>` +
+         leaf(x + 231, y + 52, 9, '#529999') + leaf(x + 236, y + 58, 6, '#3D7A7A') +
+         `<text x="${x + 236}" y="${y + 200}" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="800" fill="#8A6D3B" letter-spacing="3" transform="rotate(90 ${x + 236} ${y + 200})">TV</text>`;
+    s += `<g><rect x="${x + 70}" y="${y + 322}" width="150" height="34" rx="17" fill="#fff" stroke="#D0D3D4" stroke-width="1.4" opacity=".96"/>` +
+         `<text x="${x + 145}" y="${y + 334}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="#212322" letter-spacing="3">SALITA</text>` +
+         `<text x="${x + 145}" y="${y + 348}" text-anchor="middle" dominant-baseline="central" font-size="8.5" font-weight="700" fill="#64748B" letter-spacing=".4">zona de estar · no se reserva</text></g>`;
+    return s;
+  };
+
+  // silla: respaldo curvo del lado contrario al que mira la persona + base oscura
+  const chair = (s) => {
+    const f = s.face || 's', x = s.x, y = s.y;
+    const d = {
+      s: `M${x - 21},${y - 23} Q${x},${y - 39} ${x + 21},${y - 23}`,
+      n: `M${x - 21},${y + 23} Q${x},${y + 39} ${x + 21},${y + 23}`,
+      w: `M${x + 23},${y - 21} Q${x + 39},${y} ${x + 23},${y + 21}`,
+      e: `M${x - 23},${y - 21} Q${x - 39},${y} ${x - 23},${y + 21}`
+    }[f];
+    return `<path d="${d}" fill="none" stroke="#2B2F2E" stroke-width="8" stroke-linecap="round"/>` +
+      `<circle cx="${x}" cy="${y}" r="${s.stool ? 30.5 : 29}" fill="#4A504F"/>` +
+      (s.stool ? `<circle cx="${x}" cy="${y}" r="34.5" fill="none" stroke="#2B2F2E" stroke-width="1.6" opacity=".45"/>` : '');
+  };
+
+  const defs = `<defs>
+    <linearGradient id="gWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E3C697"/><stop offset="1" stop-color="#CFAA72"/></linearGradient>
+    <linearGradient id="gWoodV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#DDBE8D"/><stop offset="1" stop-color="#CBA46A"/></linearGradient>
+    <pattern id="gGrainV" width="9" height="120" patternUnits="userSpaceOnUse"><path d="M2 0C0 30 4 60 2 120M6 0C8 40 4 80 6.5 120" fill="none" stroke="#8F6B3C" stroke-width=".9" opacity=".35"/></pattern>
+    <linearGradient id="gWoodDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9C7647"/><stop offset="1" stop-color="#836036"/></linearGradient>
+    <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEF7F7"/><stop offset="1" stop-color="#C9E2E2"/></linearGradient>
+    <linearGradient id="gSofa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E1E3E2"/><stop offset="1" stop-color="#CBCECD"/></linearGradient>
+    <pattern id="gFloor" width="46" height="24" patternUnits="userSpaceOnUse"><rect width="46" height="24" fill="#F7F4ED"/><path d="M0 .5H46M23 .5V24" stroke="#E9E3D6" stroke-width="1"/><path d="M0 12.5H46M0 12.5" stroke="#EFEADF" stroke-width="1"/></pattern>
+    <pattern id="gGrain" width="120" height="9" patternUnits="userSpaceOnUse"><path d="M0 2C30 0 60 4 120 2M0 6C40 8 80 4 120 6.5" fill="none" stroke="#8F6B3C" stroke-width=".9" opacity=".35"/></pattern>
+    <pattern id="gRug" width="70" height="56" patternUnits="userSpaceOnUse"><rect width="70" height="56" fill="#EFEDE7"/>
+      <path d="M2 10q12-6 20 0t18-2M30 34q10-6 18 0t16-3M6 48q8-4 14 0M50 14q6-3 12 1M44 52q9-5 18 0" fill="none" stroke="#F1CB3A" stroke-width="3.2" stroke-linecap="round" opacity=".75"/>
+      <path d="M14 24q8-3 14 1M56 28q5-2 10 1M20 42q7-3 12 0" fill="none" stroke="#D8D4C8" stroke-width="2.4" stroke-linecap="round"/></pattern>
+    <pattern id="seatHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#F8DDD6"/><rect width="2.6" height="8" fill="rgba(165,32,3,.32)"/></pattern>
+    <filter id="fShadow" x="-10%" y="-10%" width="125%" height="135%"><feDropShadow dx="0" dy="2" stdDeviation="2.2" flood-color="#3b2f1c" flood-opacity=".22"/></filter>
+  </defs>`;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto" role="group" aria-label="Croquis de la oficina con los lugares de trabajo">${defs}` +
+    `<rect x="2" y="2" width="${W - 4}" height="${H - 4}" rx="20" fill="url(#gFloor)" stroke="#B9BFBE" stroke-width="3"/>`;
+
+  (m.items || []).forEach((h) => {
+    if (h.t === 'window') svg += win(h);
+    else if (h.t === 'wall') svg += `<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="4" fill="${h.fill || '#7C5CBF'}"/>`;
+    else if (h.t === 'bar') svg += table(h, true);
+    else if (h.t === 'table') svg += table(h, false);
+    else if (h.t === 'lounge') svg += lounge(h);
+    else if (h.t === 'lounge2') svg += lounge2(h);
+    else if (h.t === 'bench') svg += bench(h);
+    else if (h.t === 'column') svg += column(h);
+    else if (h.t === 'cabinet') svg += cabinet(h);
+    else if (h.t === 'printer') svg += printer(h);
+  });
+  (m.texts || []).forEach((t) => {
+    svg += `<text x="${t.x}" y="${t.y}" font-size="15" font-weight="600" fill="#64748B">${esc(t.text)}</text>`;
+  });
+
+  m.seats.forEach((s) => { svg += chair(s); });
+  m.seats.forEach((s) => {
+    const st = stateOf(s);
+    svg += `<g class="seat seat-${st.state}" data-seat="${s.n}" role="button" tabindex="${st.state === 'taken' ? -1 : 0}" aria-label="Lugar ${s.n}, ${esc(s.zone)}, ${st.label}">
+      <title>Lugar ${s.n} · ${esc(s.zone)} · ${st.label}${esc(st.who || '')}</title>
+      <circle cx="${s.x}" cy="${s.y}" r="25"/>
+      <text x="${s.x}" y="${s.y}" dy=".35em" text-anchor="middle" font-size="19" font-weight="800">${s.n}</text></g>`;
+  });
+  return svg + '</svg>';
+}
+
 function renderSeats() {
   if (!cfg || !cfg.seatMap) return;
   const range = seatRange();
   const m = cfg.seatMap;
   if (selectedSeat && seatHit(selectedSeat, range)) selectedSeat = null;
 
-  let svg = `<svg viewBox="0 0 ${m.width} ${m.height}" class="w-full h-auto" role="group" aria-label="Croquis de la oficina con los lugares de trabajo">
-    <defs><pattern id="seatHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#F8DDD6"/><rect width="2.6" height="8" fill="rgba(165,32,3,.32)"/></pattern></defs>
-    <rect x="2" y="2" width="${m.width - 4}" height="${m.height - 4}" rx="18" fill="#FAFBFC" stroke="#CBD5E1" stroke-width="3"/>`;
-  (m.shapes || []).forEach((h) => {
-    svg += `<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" rx="10" fill="${h.fill}" stroke="${h.stroke}" stroke-width="2"/>`;
-    if (h.label) {
-      const rot = h.rot ? ` transform="rotate(${h.rot} ${h.lx} ${h.ly})"` : '';
-      svg += `<text x="${h.lx}" y="${h.ly}" text-anchor="middle" dominant-baseline="central" font-size="${h.lf || 15}" font-weight="700" fill="${h.lc || '#3D7A7A'}" letter-spacing="${h.ls == null ? 3 : h.ls}"${rot}>${esc(h.label)}</text>`;
-    }
-  });
-  (m.texts || []).forEach((t) => {
-    svg += `<text x="${t.x}" y="${t.y}" font-size="15" font-weight="600" fill="#64748B">${esc(t.text)}</text>`;
-  });
-  m.seats.forEach((s) => {
-    const hit = seatHit(s.n, range);
-    const state = hit ? (hit.mine ? 'mine' : 'taken') : (selectedSeat === s.n ? 'selected' : 'free');
+  $('seatMapBox').innerHTML = mapSvg(m, (st) => {
+    const hit = seatHit(st.n, range);
+    const state = hit ? (hit.mine ? 'mine' : 'taken') : (selectedSeat === st.n ? 'selected' : 'free');
     const label = { free: 'libre', taken: 'ocupado', mine: 'reservado por ti', selected: 'seleccionado' }[state];
     const who = hit && hit.detail && !hit.mine && hit.name ? ' · ' + hit.name + (hit.agency ? ' (' + hit.agency + ')' : '') : '';
-    svg += `<g class="seat seat-${state}" data-seat="${s.n}" role="button" tabindex="${state === 'taken' ? -1 : 0}" aria-label="Lugar ${s.n}, ${esc(s.zone)}, ${label}">
-      <title>Lugar ${s.n} · ${esc(s.zone)} · ${label}${esc(who)}</title>
-      <circle cx="${s.x}" cy="${s.y}" r="25"/>
-      <text x="${s.x}" y="${s.y}" dy=".35em" text-anchor="middle" font-size="19" font-weight="800">${s.n}</text></g>`;
+    return { state, label, who };
   });
-  svg += '</svg>';
-  $('seatMapBox').innerHTML = svg;
 
   $('seatPick').innerHTML = selectedSeat
     ? `Lugar <strong>${selectedSeat}</strong> · ${esc(seatInfo(selectedSeat).zone)}`
